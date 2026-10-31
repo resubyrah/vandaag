@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0f172a" />
 <title>Vandaag</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Ccircle cx='32' cy='16' r='7' fill='%23ffd251'/%3E%3Cpath d='M17 33l10 10 20-22' stroke='%23ffffff' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.json" />
 <style>
 :root{
@@ -18,10 +19,14 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh}
 header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-header h1{font-size:20px;margin:0;font-weight:700;letter-spacing:-.02em}
-.date{color:var(--muted);font-size:13px}
-.spacer{flex:1}
+  border-bottom:1px solid var(--line);padding:10px 10px;display:flex;align-items:center;gap:6px}
+.datebox{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none}
+.datebox h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.datebox .date{color:var(--muted);font-size:12.5px}
+.iconbtn{border:none;background:none;cursor:pointer;font-size:20px;color:#4b5563;
+  padding:6px 9px;border-radius:10px;line-height:1;flex:none}
+.iconbtn:hover{background:var(--accent-soft);color:var(--accent)}
+.iconbtn:disabled{opacity:.25;cursor:default}
 .badge{border:1.5px solid var(--line);background:var(--card);border-radius:999px;
   padding:7px 14px;font-size:13.5px;font-weight:600;cursor:pointer;user-select:none;
   display:inline-flex;align-items:center;gap:6px;transition:.15s;color:var(--ink)}
@@ -29,30 +34,29 @@ header h1{font-size:20px;margin:0;font-weight:700;letter-spacing:-.02em}
 .badge.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.55}
 .badge .count{font-size:11px;background:rgba(0,0,0,.06);border-radius:999px;padding:1px 7px;color:var(--muted)}
-.badges{display:flex;gap:8px;flex-wrap:wrap;padding:14px 16px 4px;align-items:center}
-.badges .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-right:2px}
+.badges{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 0;align-items:center}
+.badges:empty{padding:0}
 .badge.ochtend.open{color:#b45309;background:#fffbeb;border-color:var(--ochtend)}
 .badge.middag.open{color:#047857;background:#ecfdf5;border-color:var(--middag)}
 .badge.avond.open{color:#4338ca;background:#eef2ff;border-color:var(--avond)}
 .grid{display:grid;gap:14px;padding:14px 16px 90px;
-  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));max-width:1200px;margin:0 auto}
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));max-width:1200px;margin:0 auto;
+  touch-action:pan-y}
 .col{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px;min-height:120px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column}
 .col.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
 .col h2{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
 .col h2 .stripe{flex:1;height:3px;border-radius:2px;background:var(--c,var(--line))}
-.add{display:flex;gap:6px;margin-bottom:8px}
-.add input{flex:1;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;background:#fafafa}
+.add input{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;background:#fafafa}
 .add input:focus{outline:none;border-color:var(--accent);background:#fff}
-.add button{border:none;background:var(--accent);color:#fff;border-radius:10px;
-  padding:8px 11px;font-size:14px;cursor:pointer}
 .item{display:flex;align-items:center;gap:8px;padding:8px 6px;border-radius:10px;border-bottom:1px solid #f0f0f0;cursor:grab}
 .item:last-child{border-bottom:none}
 .item:hover{background:#fafafa}
 .item.done .txt{text-decoration:line-through;color:var(--muted)}
 .item .txt{flex:1;font-size:14px;word-break:break-word}
-.item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
-.item .mv,.item .del{border:none;background:none;cursor:pointer;font-size:15px;color:var(--muted);padding:2px 4px;border-radius:6px}
+.item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.item .mv,.item .del{border:none;background:none;cursor:pointer;font-size:15px;color:#c7ccd6;padding:2px 4px;border-radius:6px;flex:none}
+.item:hover .mv,.item:hover .del{color:var(--muted)}
 .item .mv:hover{background:var(--accent-soft);color:var(--accent)}
 .item .del:hover{background:#fee2e2;color:#dc2626}
 .empty{color:#bbb;font-size:13px;text-align:center;padding:14px 0;font-style:italic}
@@ -61,70 +65,57 @@ menu.move{position:fixed;z-index:50;background:#fff;border:1px solid var(--line)
 menu.move button{display:block;width:100%;text-align:left;border:none;background:none;font-size:14px;
   padding:8px 10px;border-radius:8px;cursor:pointer;font-family:inherit}
 menu.move button:hover{background:var(--accent-soft)}
-#status{position:fixed;bottom:12px;left:12px;right:12px;display:flex;gap:8px;justify-content:center;pointer-events:none}
-#status>div{background:#0f172a;color:#fff;font-size:12.5px;padding:6px 14px;border-radius:999px;opacity:0;transition:.3s}
-#status>div.show{opacity:.92}
-#ver{color:#9ca3af;font-size:11px}
-.iconbtn{border:none;background:none;cursor:pointer;font-size:16px;color:#9ca3af;
-  padding:4px 6px;border-radius:8px;line-height:1}
-.iconbtn:hover{background:var(--accent-soft);color:var(--accent)}
-.iconbtn .cnt{font-size:10px;color:var(--muted);margin-left:2px}
-#syncbar{color:#9ca3af;font-size:11px}
+#status{position:fixed;bottom:16px;left:12px;right:12px;display:flex;gap:8px;justify-content:center;pointer-events:none}
+#status>div{background:#0f172a;color:#fff;font-size:12.5px;padding:7px 14px;border-radius:999px;
+  opacity:0;transition:.3s;display:flex;align-items:center;gap:10px}
+#status>div.show{opacity:.94}
+#status button{border:none;background:rgba(255,255,255,.18);color:#fff;border-radius:999px;
+  padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;pointer-events:auto}
+#syncbar{color:#9ca3af;font-size:11px;flex:none}
 .col h2 .min{border:none;background:#f1f3f7;color:var(--muted);border-radius:999px;
-  width:20px;height:20px;line-height:1;cursor:pointer;font-weight:700;font-size:14px;padding:0}
+  width:20px;height:20px;line-height:1;cursor:pointer;font-weight:700;font-size:14px;padding:0;flex:none}
 .col h2 .min:hover{background:var(--accent-soft);color:var(--accent)}
-dialog#hist{border:none;border-radius:16px;padding:24px;max-width:420px;width:92vw;
+#fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:28px;border:none;line-height:1;z-index:20;
+  box-shadow:0 6px 22px rgba(37,99,235,.45);cursor:pointer}
+#fab:active{transform:scale(.94)}
+dialog{border:none;border-radius:16px;padding:24px;max-width:420px;width:92vw;
   box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:80vh;display:flex;flex-direction:column}
-dialog#hist::backdrop{background:rgba(15,23,42,.4)}
-dialog#hist h3{margin:0 0 2px}
-dialog#hist p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
-#histBox{overflow:auto;min-height:60px}
-#histBox h4{margin:12px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-#histBox .item{cursor:default}
-#histBox .hlist{font-size:11px;color:var(--muted);background:#f1f3f7;border-radius:999px;padding:2px 8px}
-dialog#login{border:none;border-radius:16px;padding:26px;max-width:330px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-dialog#login::backdrop{background:rgba(15,23,42,.4)}
-dialog#login h3{margin:0 0 6px}
-dialog#login p{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+dialog::backdrop{background:rgba(15,23,42,.4)}
+dialog h3{margin:0 0 2px}
+dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 .btn{border:none;border-radius:12px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;margin:0 4px}
 .btn.pri{background:var(--accent);color:#fff}
 .btn.sec{background:#eef0f4;color:var(--ink)}
+#menuBox{display:flex;flex-direction:column;gap:8px}
+#menuBox .btn{width:100%;margin:0}
+#menuVer{color:#9ca3af;font-size:11px;text-align:center;margin:6px 0 0}
 @media (max-width:560px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 <header>
-  <h1>Vandaag</h1>
-  <span class="date" id="date"></span>
-  <span class="spacer"></span>
-  <span id="ver"></span>
+  <button class="iconbtn" id="menuBtn" title="Menu">☰</button>
+  <button class="iconbtn" id="prevDay" title="Vorige dag">‹</button>
+  <div class="datebox" id="dateBox" title="Tik: terug naar vandaag">
+    <h1 id="dateTitle">Vandaag</h1>
+    <span class="date" id="dateSub"></span>
+  </div>
+  <button class="iconbtn" id="nextDay" title="Volgende dag">›</button>
   <span id="syncbar"></span>
-  <button class="iconbtn" id="histBtn" title="Historie" hidden>🕘</button>
-  <button class="badge" id="authBtn">🔑 Inloggen</button>
 </header>
 
 <div class="badges" id="badges"></div>
 <div class="grid" id="grid"></div>
 
+<button id="fab" title="Nieuwe lijst">＋</button>
 <div id="status"><div id="toast"></div></div>
 
 <dialog id="login">
   <h3>Vandaag — cloud</h3>
-  <p>Log in met je Google-account om je lijsten automatisch als JSON-files in Google Drive op te slaan (via Google Apps Script). Zonder login werkt de app lokaal op dit apparaat.</p>
+  <p>Log in met je Google-account om je dagen en lijsten automatisch als JSON-files in Google Drive op te slaan (via Google Apps Script). Zonder login werkt de app lokaal op dit apparaat.</p>
   <button class="btn pri" id="loginGo">Inloggen met Google</button>
   <button class="btn sec" id="loginNo">Lokaal gebruiken</button>
-</dialog>
-
-<dialog id="hist">
-  <h3>🕘 Historie</h3>
-  <p>Afgevinkte taken blijven hier opvraagbaar per dag — ↩ zet een taak terug.</p>
-  <input id="histSearch" type="search" placeholder="🔍 zoeken in historie…"
-    style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;margin-bottom:6px" />
-  <div id="histBox"></div>
-  <div style="margin-top:16px">
-    <button class="btn sec" id="histClear">Wis historie</button>
-    <button class="btn pri" id="histClose">Sluiten</button>
-  </div>
 </dialog>
 
 <dialog id="logd">
@@ -136,6 +127,18 @@ dialog#login p{color:var(--muted);font-size:13.5px;margin:0 0 18px}
     <button class="btn sec" id="logClear">Wis logboek</button>
     <button class="btn pri" id="logClose">Sluiten</button>
   </div>
+</dialog>
+
+<dialog id="menu">
+  <h3>☰ Menu</h3>
+  <div id="menuBox">
+    <button class="btn sec" id="menuAuth">🔑 Inloggen</button>
+    <button class="btn sec" id="menuLogout" hidden>🔓 <span id="menuUser"></span> — uitloggen</button>
+    <button class="btn sec" id="menuDate">📅 Andere datum…</button>
+    <button class="btn sec" id="menuLog">📋 Logboek</button>
+    <button class="btn pri" id="menuClose">Sluiten</button>
+  </div>
+  <p id="menuVer"></p>
 </dialog>
 
 <script>
@@ -157,40 +160,108 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.3.3";
+const VERSION = "0.4.0";
 
 /* ============================================================
-   State & opslag — per badge (lijst) één JSON-file
+   State & opslag
+   - days: per datum (YYYY-MM-DD) de dagdelen met items
+   - lists: doorlopende onderwerpen-lijsten (topic:<id>)
+   Sync-keys: "day:<datum>" en "topic:<id>" → elk één JSON in Drive
    ============================================================ */
 const LS_KEY = "vandaag_state_v1";
 const DAY_KEYS = CONFIG.DAY_PARTS.map(d => d.key);
-let state = { topics: [], lists: {}, history: { name:"Historie", items: [] }, lastDay: null };
-// lists: { key: {name,color,items:[{id,text,done,doneAt,created}],updated} }
-let openLists = new Set(DAY_KEYS);        // dagdelen zijn badges en staan default open
+let state = { topics: [], lists: {}, days: {} };
+let openLists = new Set(DAY_KEYS);        // dagdelen staan default open
 let activeTopic = null;
+let viewDate = null;                      // YYYY-MM-DD die je bekijkt
 let user = null, accessToken = null;
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const listKey = t => "topic:" + t;
 
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function addDays(dateStr, n){
+  const d = new Date(dateStr + "T12:00");
+  d.setDate(d.getDate() + n);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function nowISO(){ return viewDate + "T" + new Date().toTimeString().slice(0,5); }
+
+function dayItems(date, key){
+  if(!state.days[date]) state.days[date] = {};
+  if(!state.days[date][key]) state.days[date][key] = [];
+  return state.days[date][key];
+}
+/* lijst-referentie voor sync: key = "day:<datum>" of "topic:<id>" */
+function refKey(ref){ return ref.date ? "day:" + ref.date : ref.key; }
+function refArr(ref){ return ref.date ? dayItems(ref.date, ref.key) : state.lists[ref.key].items; }
+function refName(ref){
+  if(!ref.date) return state.lists[ref.key].name;
+  const dp = CONFIG.DAY_PARTS.find(d => d.key === ref.key);
+  return (dp ? dp.name : ref.key) + " · " + ref.date.slice(8) + "-" + ref.date.slice(5,7);
+}
+
 function loadLocal(){
   try{
     const s = JSON.parse(localStorage.getItem(LS_KEY));
     if(s){
-      state = s; openLists = new Set(s.openLists || DAY_KEYS); activeTopic = s.activeTopic || null;
-      (s.dirty || []).forEach(k => dirtyKeys.add(k));   // ongepushte wijzigingen na herstart opnieuw syncen
+      state = { topics: s.topics || [], lists: s.lists || {}, days: s.days || {} };
+      openLists = new Set(s.openLists || DAY_KEYS);
+      activeTopic = s.activeTopic || null;
+      (s.dirty || []).forEach(k => dirtyKeys.add(k));
+      /* ---- migratie v0.3 → v0.4: dagdelen uit state.lists + oude historie ---- */
+      let migrated = 0;
+      for(const key of DAY_KEYS){
+        if(state.lists[key]){                       // oude dagdeel-lijst
+          const d = s.lastDay || todayStr();
+          dayItems(d, key).push(...(state.lists[key].items || []));
+          delete state.lists[key];
+          migrated += (state.lists[key] || {items:[]}).items ? 1 : 1;
+          dirtyKeys.add("day:" + d);
+        }
+      }
+      if(s.history && s.history.items && s.history.items.length){
+        for(const it of s.history.items){
+          const d = (it.doneAt || "").slice(0,10) || s.lastDay || todayStr();
+          dayItems(d, "avond").push({ id: it.id, text: it.text, done:true, doneAt: it.doneAt, created: it.created });
+          migrated++;
+        }
+        dirtyKeys.add("day:" + (s.history.items[0].doneAt || "").slice(0,10) || todayStr());
+      }
+      if(migrated) log("Migratie v0.3 → v0.4: " + migrated + " item(s) verplaatst naar dagen");
     }
   }catch(e){ log("Lokale data lezen mislukt", e); }
+  for(const d of CONFIG.DAY_PARTS) if(state.days[todayStr()] && !state.days[todayStr()][d.key]) dayItems(todayStr(), d.key);
   if(!state.lists) state.lists = {};
-  for(const d of CONFIG.DAY_PARTS) if(!state.lists[d.key]) state.lists[d.key] = { name:d.name, color:d.color, items:[] };
-  if(!state.history) state.history = { name:"Historie", items: [] };
-  if(!state.lastDay) state.lastDay = todayStr();
+  viewDate = todayStr();
 }
 function saveLocal(){
   state.openLists = [...openLists]; state.activeTopic = activeTopic;
   state.dirty = [...dirtyKeys];
   localStorage.setItem(LS_KEY, JSON.stringify(state));
 }
+
+/* ============================================================
+   Undo — elke mutatie zet een tegenzet op de stapel
+   ============================================================ */
+const undoStack = [];
+function offerUndo(label){
+  const t = document.getElementById("toast");
+  const btn = document.createElement("button"); btn.textContent = "↩ Ongedaan";
+  btn.onclick = () => { doUndo(); };
+  toast(label, btn);
+}
+function doUndo(){
+  const u = undoStack.pop();
+  if(!u){ toast("Niets meer terug te draaien"); return; }
+  u.fn();
+  (u.keys || []).forEach(k => markDirty(k));
+  render(); saveLocal();
+}
+function pushUndo(fn, keys){ undoStack.push({ fn, keys: keys || [] }); if(undoStack.length > 20) undoStack.shift(); }
 
 /* ============================================================
    Google login — Google Identity Services (oauth token)
@@ -204,13 +275,12 @@ function initGIS(){
     scope: "openid email profile",
     callback: async (resp) => {
       if(!resp.access_token){
-        // stil verzoek faalde; consent-venster alleen als de gebruiker zelf vroeg om inloggen
         if(loginRequested && !retriedConsent && promptMode !== "consent"){
           retriedConsent = true;
           tokenClient.requestAccessToken({ prompt: "consent" });
           return;
         }
-        return; // anders: gewoon lokale modus
+        return;
       }
       accessToken = resp.access_token;
       try{
@@ -220,10 +290,10 @@ function initGIS(){
         user = info.email;
       }catch(e){ log("userinfo ophalen mislukt", e); }
       log("Ingelogd als " + (user || "onbekend") + " — sync gestart");
-      updateAuthBtn();
+      updateMenuAuth();
       toast(user ? "Ingelogd als " + user + " — sync met Drive" : "Ingelogd");
-      pull(true);      // serverdata ophalen
-      pushDirty();     // eigen openstaande wijzigingen erheen
+      pull(true);
+      pushDirty();
       updateSyncBar();
     }
   });
@@ -236,8 +306,7 @@ function requestToken(prompt){
 }
 function loginFlow(prompt){
   if(CONFIG.CLIENT_ID.startsWith("JOUW_")){ toast("Vul eerst je CLIENT_ID in bij CONFIG"); return; }
-  loginRequested = true;   // consent-venster mag getoond worden als stil niet lukt
-  // script kan nog aan het laden zijn: max 5 s wachten, dan pas klagen
+  loginRequested = true;
   if(requestToken(prompt || "")) return;
   let waited = 0;
   const iv = setInterval(() => {
@@ -252,21 +321,21 @@ function loginFlow(prompt){
 function logout(){
   if(accessToken && window.google) try{ google.accounts.oauth2.revoke(accessToken, ()=>{}); }catch(e){}
   user = null; accessToken = null;
-  updateAuthBtn(); toast("Uitgelogd — alleen lokaal");
+  updateMenuAuth(); toast("Uitgelogd — alleen lokaal");
 }
-function updateAuthBtn(){
-  const b = document.getElementById("authBtn");
-  b.textContent = user ? "🔓 " + user : "🔑 Inloggen";
-  b.classList.toggle("open", !!user);
+function updateMenuAuth(){
+  document.getElementById("menuAuth").hidden = !!user;
+  document.getElementById("menuLogout").hidden = !user;
+  document.getElementById("menuUser").textContent = user || "";
+  updateSyncBar();
 }
 
 /* ============================================================
-   Backend — Google Apps Script, per badge één JSON in Drive
+   Backend — Google Apps Script, per sync-key één JSON in Drive
    ============================================================ */
 async function api(action, key, data){
   const res = await fetch(CONFIG.SCRIPT_URL, {
     method: "POST",
-    // text/plain vermijdt CORS-preflight bij Apps Script
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action, key, data, token: accessToken })
   });
@@ -276,12 +345,7 @@ async function api(action, key, data){
   return r;
 }
 /* ============================================================
-   Optimistic syncing (zoals de bandplan-app)
-   - elke mutatie: meteen lokaal zichtbaar + bewaard (optimistic)
-   - push debounce 5 s: vlug tikken achter elkaar = één batch
-   - mislukte push: bewaard op dit apparaat, over 10 s opnieuw
-   - pull elke 10 s (alleen als tab zichtbaar) + bij tab-focus;
-     server wint nooit voor lijsten met eigen ongepushte wijzigingen
+   Optimistic syncing
    ============================================================ */
 const dirtyKeys = new Set();
 let pushTimer = null, retryTimer = null;
@@ -294,25 +358,33 @@ function markDirty(key){
   clearTimeout(pushTimer);
   pushTimer = setTimeout(pushDirty, 5000);
 }
+function payloadFor(k){
+  if(k.startsWith("day:")){
+    const d = k.slice(4);
+    const items = {};
+    for(const key of DAY_KEYS) items[key] = (state.days[d] && state.days[d][key]) || [];
+    return { name:"Dag " + d, date:d, items, updated: nowISO() };
+  }
+  const l = state.lists[k] || {};
+  return { name: l.name, color: l.color, items: l.items || [], updated: nowISO() };
+}
 async function pushDirty(){
   if(!accessToken || !dirtyKeys.size) return;
   const keys = [...dirtyKeys];
   try{
     for(const k of keys){
-      if(!state.lists[k] && k !== "history"){ dirtyKeys.delete(k); continue; }
-      const payload = k === "history"
-        ? { name: "Historie", items: state.history.items, updated: nowISO() }
-        : { name: state.lists[k].name, color: state.lists[k].color, items: state.lists[k].items, updated: nowISO() };
-      await api("put", k, payload);
+      if(k.startsWith("day:") && !state.days[k.slice(4)]){ dirtyKeys.delete(k); continue; }
+      if(!k.startsWith("day:") && !state.lists[k]){ dirtyKeys.delete(k); continue; }
+      await api("put", k, payloadFor(k));
       dirtyKeys.delete(k);
     }
-    log("Push oké: " + keys.length + " lijst(en) naar Drive");
+    log("Push oké: " + keys.length + " key(s) naar Drive");
     updateSyncBar("gesynchroniseerd");
-    pull();                       // meteen andermans wijzigingen ophalen
+    pull();
   }catch(e){
-    log("Push mislukt (" + dirtyKeys.size + " lijsten blijven dirty)", e);
+    log("Push mislukt (" + dirtyKeys.size + " keys blijven dirty)", e);
     updateSyncBar(e && e.message === "locked"
-      ? "tijdelijk geblokkeerd (te veel mislukte pogingen) — over enkele minuten opnieuw"
+      ? "tijdelijk geblokkeerd — over enkele minuten opnieuw"
       : "sync mislukt — probeert over 10 s opnieuw");
     clearTimeout(retryTimer);
     retryTimer = setTimeout(pushDirty, 10000);
@@ -320,28 +392,32 @@ async function pushDirty(){
 }
 async function pull(force){
   if(!accessToken) return;
-  if(!force && dirtyKeys.size) return;   // niet over eigen werk heen schrijven
+  if(!force && dirtyKeys.size) return;
   try{
     const r = await api("getAll");
     const files = r.files || {};
     let changed = false;
     for(const k of Object.keys(files)){
       const srv = files[k];
-      if(!srv || !srv.items && !srv.name) continue;
-      if(k === "history"){
-        if(!dirtyKeys.has("history") && (srv.items||[]).length >= (state.history.items||[]).length
-           && (srv.updated||"") > (state.history.updated||"")){
-          state.history = srv; changed = true;
+      if(!srv) continue;
+      if(k.startsWith("day:")){
+        const d = k.slice(4);
+        if(!dirtyKeys.has(k) && (srv.updated || "") > ((state.days[d] && state.days[d].updated) || "")){
+          const day = {};
+          for(const key of DAY_KEYS) day[key] = (srv.items && srv.items[key]) || [];
+          day.updated = srv.updated;
+          state.days[d] = day; changed = true;
         }
         continue;
       }
-      if(!state.lists[k]){
-        state.lists[k] = srv; changed = true;
-        // onderwerpen op een ander apparaat aangemaakt → hier overnemen
-        if(k.startsWith("topic:") && !state.topics.some(t => listKey(t.id) === k))
-          state.topics.push({ id: k.slice(6), name: srv.name });
-      } else if(!dirtyKeys.has(k) && (srv.updated || "") > (state.lists[k].updated || "")){
-        state.lists[k] = srv; changed = true;
+      if(k.startsWith("topic:") && srv.items){
+        if(!state.lists[k]){
+          state.lists[k] = srv; changed = true;
+          if(!state.topics.some(t => listKey(t.id) === k))
+            state.topics.push({ id: k.slice(6), name: srv.name || k.slice(6) });
+        } else if(!dirtyKeys.has(k) && (srv.updated || "") > (state.lists[k].updated || "")){
+          state.lists[k] = srv; changed = true;
+        }
       }
     }
     if(changed){ render(); updateSyncBar("gesynchroniseerd"); log("Pull oké: wijzigingen van server overgenomen"); }
@@ -355,152 +431,77 @@ function updateSyncBar(txt){
 }
 
 /* ============================================================
-   Dagrollover & historie
-   Afgevinkte taken (dagdelen ÉN onderwerpen) verdwijnen pas de
-   volgende dag en gaan naar de historie (opvraagbaar via 🕘,
-   met zoekveld en "terug naar vandaag").
-   ============================================================ */
-function todayStr(){
-  const d = new Date();
-  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-}
-function nowISO(){
-  const d = new Date();
-  return todayStr() + "T" + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
-}
-function rollover(){
-  const today = todayStr();
-  if(state.lastDay === today) return 0;
-  state.lastDay = today;
-  let n = 0;
-  for(const k of Object.keys(state.lists)){
-    const l = state.lists[k]; if(!l || !l.items) continue;
-    const stay = [];
-    let changed = false;
-    for(const it of l.items){
-      if(it.done && it.doneAt && it.doneAt.slice(0,10) < today){
-        state.history.items.push({ id: it.id, text: it.text, doneAt: it.doneAt, list: l.name, key: k });
-        n++; changed = true;
-      } else stay.push(it);
-    }
-    if(changed){ l.items = stay; dirtyKeys.add(k); }
-  }
-  if(n) dirtyKeys.add("history");
-  return n;
-}
-function showHistory(){
-  document.getElementById("histSearch").value = "";
-  renderHistory("");
-  document.getElementById("hist").showModal();
-}
-function restoreFromHistory(id){
-  const idx = state.history.items.findIndex(x => x.id === id);
-  if(idx < 0) return;
-  const it = state.history.items[idx];
-  // terug naar de originele lijst; bestaat die niet meer → ochtend
-  const target = (it.key && state.lists[it.key]) ? it.key : DAY_KEYS[0];
-  state.lists[target].items.push({ id: it.id, text: it.text, done:false, doneAt:null, created: nowISO() });
-  state.history.items.splice(idx, 1);
-  markDirty("history"); markDirty(target);
-  renderHistory(document.getElementById("histSearch").value);
-  toast("Teruggezet naar " + state.lists[target].name);
-}
-function renderHistory(q){
-  const box = document.getElementById("histBox");
-  box.innerHTML = "";
-  q = (q || "").trim().toLowerCase();
-  const items = (state.history.items || []).slice()
-    .filter(it => !q || (it.text || "").toLowerCase().includes(q) || (it.list || "").toLowerCase().includes(q))
-    .sort((a,b) => (b.doneAt || "").localeCompare(a.doneAt || ""));
-  if(!items.length){
-    const e = document.createElement("div"); e.className = "empty";
-    e.textContent = q ? "niets gevonden" : "Nog geen afgeronde taken — vandaag begint de teller.";
-    box.appendChild(e);
-    return;
-  }
-  let curDate = "";
-  for(const it of items){
-    const d = (it.doneAt || "").slice(0,10);
-    if(d !== curDate){
-      curDate = d;
-      const h = document.createElement("h4");
-      h.textContent = new Date(d + "T12:00").toLocaleDateString("nl-NL",
-        { weekday:"long", day:"numeric", month:"long" });
-      box.appendChild(h);
-    }
-    const row = document.createElement("div");
-    row.className = "item done";
-    const txt = document.createElement("span"); txt.className = "txt"; txt.textContent = it.text;
-    const lst = document.createElement("span"); lst.className = "hlist"; lst.textContent = it.list || "";
-    const back = document.createElement("button"); back.className = "mv"; back.title = "Terug naar vandaag"; back.textContent = "↩";
-    back.onclick = () => restoreFromHistory(it.id);
-    row.append(txt, lst, back);
-    box.appendChild(row);
-  }
-}
-
-/* ============================================================
-   UI
-   ============================================================ */
-/* ============================================================
-   Logging — console + in-app logboek (max 100 regels)
-   Tik op het versienummer (v rechtsboven) om het logboek te lezen.
+   Logging — console + in-app logboek (menu → 📋 Logboek)
    ============================================================ */
 function log(msg, err){
-  const line = nowISO() + "  " + msg + (err ? "  ⚠ " + (err && err.message ? err.message : JSON.stringify(err)) : "");
+  const line = todayStr() + " " + new Date().toTimeString().slice(0,5) + "  " + msg
+    + (err ? "  ⚠ " + (err && err.message ? err.message : JSON.stringify(err)) : "");
   state.log = state.log || [];
   state.log.push(line);
   if(state.log.length > 100) state.log.shift();
   if(err) console.error("[vandaag] " + msg, err);
   else console.log("[vandaag] " + msg);
 }
-function toast(msg){
+function toast(msg, actionEl){
   log(msg);
   const t = document.getElementById("toast");
-  t.textContent = msg; t.classList.add("show");
-  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 2600);
+  t.textContent = msg;
+  if(actionEl){ t.appendChild(actionEl); }
+  t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(()=>{ t.classList.remove("show"); setTimeout(()=>{ t.textContent=""; }, 300); }, 3400);
 }
 function showLog(){
   const box = document.getElementById("logBox");
   box.textContent = (state.log || []).slice().reverse().join("\n") || "(leeg logboek)";
   document.getElementById("logd").showModal();
 }
-function render(){ renderBadges(); renderGrid(); renderHistBtn(); saveLocal(); }
-function renderHistBtn(){
-  const b = document.getElementById("histBtn");
-  const n = (state.history.items || []).length;
-  b.hidden = n === 0;                       // geen historie → geen knop
-  b.innerHTML = n ? '🕘<span class="cnt">' + n + '</span>' : "🕘";
+
+/* ============================================================
+   UI — dagweergave, badges, kolommen
+   ============================================================ */
+function render(){ renderBadges(); renderGrid(); renderDate(); saveLocal(); }
+
+function renderDate(){
+  const d = new Date(viewDate + "T12:00");
+  const t = todayStr();
+  let title;
+  if(viewDate === t) title = "Vandaag";
+  else if(viewDate === addDays(t, 1)) title = "Morgen";
+  else if(viewDate === addDays(t, -1)) title = "Gisteren";
+  else title = d.toLocaleDateString("nl-NL", { weekday:"long" });
+  document.getElementById("dateTitle").textContent = title;
+  document.getElementById("dateSub").textContent =
+    d.toLocaleDateString("nl-NL", { day:"numeric", month:"long" })
+    + (viewDate === t ? "" : " — tik voor vandaag");
+  document.title = title + " · Vandaag";
+}
+function goTo(dateStr){
+  viewDate = dateStr;
+  render();
 }
 
 function renderBadges(){
   const el = document.getElementById("badges"); el.innerHTML = "";
-  const lbl = document.createElement("span"); lbl.className="lbl"; lbl.textContent="Lijsten";
-  el.appendChild(lbl);
-
   const mkBadge = (key, {removeable}={}) => {
-    const list = state.lists[key];
+    const isDay = DAY_KEYS.includes(key);
+    const list = isDay ? { name: CONFIG.DAY_PARTS.find(d=>d.key===key).name }
+                       : state.lists[key];
+    const items = isDay ? dayItems(viewDate, key) : state.lists[key].items;
     const b = document.createElement("button");
     b.className = "badge" + (openLists.has(key) ? " open " + key : "");
-    const open = list.items.filter(i=>!i.done).length;
+    const open = items.filter(i=>!i.done).length;
     b.innerHTML = `<span class="dot"></span>${list.name}<span class="count">${open}</span>`;
     b.onclick = e => { if(removeable && e.shiftKey){ deleteTopic(key); } else toggleList(key); };
     b.oncontextmenu = e => { if(removeable){ e.preventDefault(); deleteTopic(key); } };
     return b;
   };
-
-  // open lijsten hebben geen badge meer: minimaliseren via de −-knop in de kolomkop
   for(const d of CONFIG.DAY_PARTS) if(!openLists.has(d.key)) el.appendChild(mkBadge(d.key));
   for(const t of state.topics) if(!openLists.has(listKey(t.id))) el.appendChild(mkBadge(listKey(t.id), {removeable:true}));
-  const add = document.createElement("button");
-  add.className = "badge"; add.textContent = "+ onderwerp";
-  add.onclick = addTopic;
-  el.appendChild(add);
 }
 
 function toggleList(key){
   if(openLists.has(key)){
-    openLists.delete(key);          // badge verschijnt weer in de badgerij
+    openLists.delete(key);
     if(key === activeTopic) activeTopic = null;
   } else {
     openLists.add(key);
@@ -509,31 +510,55 @@ function toggleList(key){
   render();
 }
 function addTopic(){
-  const name = prompt("Naam van het onderwerp:");
+  const name = prompt("Naam van de nieuwe lijst:");
   if(!name || !name.trim()) return;
   const id = uid(), key = listKey(id);
   state.topics.push({ id, name: name.trim() });
   state.lists[key] = { name: name.trim(), items: [] };
   openLists.add(key); activeTopic = key;
+  pushUndo(() => {                        // hele lijst weer weghalen
+    state.topics = state.topics.filter(t => t.id !== id);
+    delete state.lists[key]; openLists.delete(key);
+    if(accessToken) api("del", key).catch(()=>{});
+    saveLocal();
+  }, [key]);
   render(); markDirty(key);
+  offerUndo("Lijst '" + name.trim() + "' toegevoegd");
 }
 function deleteTopic(key){
-  if(!confirm('Onderwerp "' + state.lists[key].name + '" incl. taken verwijderen?')) return;
-  const id = key.slice(6);
+  if(!confirm('Lijst "' + state.lists[key].name + '" incl. taken verwijderen?')) return;
+  const id = key.slice(6), backup = state.lists[key], wasOpen = openLists.has(key);
   state.topics = state.topics.filter(t => t.id !== id);
   delete state.lists[key];
   openLists.delete(key);
   if(activeTopic === key) activeTopic = null;
+  pushUndo(() => {
+    state.lists[key] = backup;
+    if(!state.topics.some(t => t.id === id))
+      state.topics.push({ id, name: backup.name });
+    if(wasOpen) openLists.add(key);
+    saveLocal();
+  }, [key]);
   render();
-  if(accessToken) api("del", key).catch(()=>{});   // JSON-file op Drive opruimen
+  offerUndo("Lijst verwijderd");
+  if(accessToken) api("del", key).catch(()=>{});
 }
 
 function renderGrid(){
   const g = document.getElementById("grid"); g.innerHTML = "";
-  for(const key of openLists) g.appendChild(makeColumn(key, state.lists[key]));
+  for(const key of openLists){
+    const isDay = DAY_KEYS.includes(key);
+    const dp = CONFIG.DAY_PARTS.find(d => d.key === key);
+    const col = makeColumn(
+      { date: isDay ? viewDate : null, key },
+      isDay ? { name: dp.name, color: dp.color } : state.lists[key]
+    );
+    g.appendChild(col);
+  }
 }
 
-function makeColumn(key, list){
+function makeColumn(ref, list){
+  const key = refKey(ref);
   const col = document.createElement("section");
   col.className = "col"; col.dataset.key = key;
   const h = document.createElement("h2");
@@ -543,39 +568,66 @@ function makeColumn(key, list){
   h.appendChild(stripe);
   const min = document.createElement("button");
   min.className = "min"; min.textContent = "–"; min.title = "Minimaliseren — badge komt terug in de rij";
-  min.onclick = () => toggleList(key);
+  min.onclick = () => toggleList(ref.date ? ref.key : ref.key);
   h.appendChild(min);
   col.appendChild(h);
 
   const add = document.createElement("div"); add.className = "add";
-  const inp = document.createElement("input"); inp.placeholder = "+ taak voor " + list.name.toLowerCase();
-  const btn = document.createElement("button"); btn.textContent = "＋";
-  const doAdd = () => {
-    const v = inp.value.trim(); if(!v) return;
-    list.items.push({ id: uid(), text: v, done:false, created: new Date().toISOString() });
-    inp.value = ""; render(); markDirty(key);
-  };
-  btn.onclick = doAdd; inp.onkeydown = e => { if(e.key === "Enter") doAdd(); };
-  add.append(inp, btn); col.appendChild(add);
+  const inp = document.createElement("input"); inp.type = "text";   // leeg veld, geen placeholder
+  inp.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); addItem(ref, inp.value); inp.value = ""; } };
+  add.appendChild(inp); col.appendChild(add);
 
   const box = document.createElement("div");
-  if(!list.items.length){ const e = document.createElement("div"); e.className="empty";
-    e.textContent = "leeg — voeg een taak toe of sleep er een heen"; box.appendChild(e); }
-  for(const it of list.items) box.appendChild(makeItem(key, list, it));
+  const items = refArr(ref);
+  if(!items.length){ const e = document.createElement("div"); e.className="empty";
+    e.textContent = "leeg — type hierboven of sleep er iets heen"; box.appendChild(e); }
+  for(const it of items) box.appendChild(makeItem(ref, it));
   col.appendChild(box);
 
-  // drag & drop tussen open lijsten
   col.addEventListener("dragover", e => { e.preventDefault(); col.classList.add("drag-over"); });
   col.addEventListener("dragleave", () => col.classList.remove("drag-over"));
   col.addEventListener("drop", e => {
     e.preventDefault(); col.classList.remove("drag-over");
-    const [srcKey, itemId] = e.dataTransfer.getData("text/plain").split("|");
-    moveItem(srcKey, key, itemId);
+    const [date, srcKey, itemId] = e.dataTransfer.getData("text/plain").split("|");
+    moveItem({ date: date || null, key: srcKey }, ref, itemId);
   });
   return col;
 }
 
-function makeItem(key, list, it){
+function addItem(ref, value){
+  const v = (value || "").trim(); if(!v) return;
+  const items = refArr(ref);
+  const it = { id: uid(), text: v, done:false, doneAt:null, created: nowISO() };
+  items.push(it);
+  pushUndo(() => { refArr(ref).splice(refArr(ref).findIndex(x => x.id === it.id), 1); saveLocal(); }, [refKey(ref)]);
+  render(); markDirty(refKey(ref));
+  offerUndo("Toegevoegd");
+}
+function deleteItem(ref, it){
+  const items = refArr(ref);
+  const idx = items.findIndex(x => x.id === it.id);
+  items.splice(idx, 1);
+  pushUndo(() => { refArr(ref).splice(Math.min(idx, refArr(ref).length), 0, it); saveLocal(); }, [refKey(ref)]);
+  render(); markDirty(refKey(ref));
+  offerUndo("Verwijderd: " + (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text));
+}
+function toggleItem(ref, it, done){
+  const old = { done: it.done, doneAt: it.doneAt };
+  it.done = done; it.doneAt = done ? nowISO() : null;
+  pushUndo(() => { it.done = old.done; it.doneAt = old.doneAt; saveLocal(); }, [refKey(ref)]);
+  render(); markDirty(refKey(ref));
+  if(done) offerUndo("Afgevinkt"); 
+}
+function editText(ref, it){
+  const v = prompt("Taak aanpassen:", it.text);
+  if(!v || !v.trim() || v.trim() === it.text) return;
+  const old = it.text;
+  it.text = v.trim();
+  pushUndo(() => { it.text = old; saveLocal(); }, [refKey(ref)]);
+  render(); markDirty(refKey(ref));
+}
+
+function makeItem(ref, it){
   const el = document.createElement("div");
   el.className = "item" + (it.done ? " done" : "");
   el.draggable = true;
@@ -584,86 +636,124 @@ function makeItem(key, list, it){
   const mv = document.createElement("button"); mv.className = "mv"; mv.title = "Verplaatsen"; mv.textContent = "⇄";
   const del = document.createElement("button"); del.className = "del"; del.title = "Verwijderen"; del.textContent = "✕";
   el.append(cb, txt, mv, del);
-  el.addEventListener("dragstart", e => e.dataTransfer.setData("text/plain", key + "|" + it.id));
-  cb.onchange = () => {
-    it.done = cb.checked;
-    it.doneAt = cb.checked ? nowISO() : null;   // datum van afvinken → rollover & historie
-    render(); markDirty(key);
-  };
-  txt.onclick = () => { const v = prompt("Taak aanpassen:", it.text);
-    if(v && v.trim()){ it.text = v.trim(); render(); markDirty(key); } };
-  del.onclick = () => { list.items = list.items.filter(x => x.id !== it.id); render(); markDirty(key); };
-  mv.onclick = e => showMoveMenu(e, key, it.id);
+  el.addEventListener("dragstart", e =>
+    e.dataTransfer.setData("text/plain", (ref.date || "") + "|" + (ref.date ? ref.key : ref.key) + "|" + it.id));
+  cb.onchange = () => toggleItem(ref, it, cb.checked);
+  txt.onclick = () => editText(ref, it);
+  del.onclick = () => deleteItem(ref, it);
+  mv.onclick = e => showMoveMenu(e, ref, it);
   return el;
 }
 
-function showMoveMenu(e, srcKey, itemId){
+function showMoveMenu(e, srcRef, it){
   document.querySelector("menu.move")?.remove();
   const m = document.createElement("menu"); m.className = "move";
   const mk = (label, fn) => { const b = document.createElement("button"); b.textContent = label;
     b.onclick = () => { m.remove(); fn(); }; m.appendChild(b); };
-  for(const k of openLists) if(k !== srcKey)
-    mk("→ " + state.lists[k].name, () => moveItem(srcKey, k, itemId));
-  for(const t of state.topics) if(!openLists.has(listKey(t.id)))
-    mk("→ " + t.name + " (opent)", () => { openLists.add(listKey(t.id)); moveItem(srcKey, listKey(t.id), itemId); });
+  for(const k of openLists){
+    if(ref.date && k === srcRef.key) continue;       // zelfde dagdeel op zelfde dag
+    if(!ref.date && k === srcRef.key) continue;
+    const isDay = DAY_KEYS.includes(k);
+    const name = isDay ? CONFIG.DAY_PARTS.find(d=>d.key===k).name : state.lists[k].name;
+    mk("→ " + name + (isDay ? "" : ""), () => moveItem(srcRef, { date: isDay ? viewDate : null, key: k }, it.id));
+  }
+  mk("📅 → " + dateTitleOf(addDays(viewDate,1)), () =>
+    moveItem(srcRef, { date: addDays(viewDate,1), key: ref.date ? srcRef.key : "ochtend" }, it.id));
+  mk("📅 Andere datum…", () => {
+    const v = prompt("Verplaatsen naar datum (jjjj-mm-dd, of 'morgen'):", addDays(viewDate,1));
+    if(!v) return;
+    const d = v.trim() === "morgen" ? addDays(todayStr(),1) : v.trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ toast("Onbekende datum"); return; }
+    moveItem(srcRef, { date: d, key: ref.date ? srcRef.key : "ochtend" }, it.id);
+  });
   document.body.appendChild(m);
   const r = e.target.getBoundingClientRect();
   m.style.left = Math.min(r.left, innerWidth - 200) + "px";
   m.style.top = Math.min(r.bottom + 6, innerHeight - m.offsetHeight - 10) + "px";
   setTimeout(() => document.addEventListener("click", () => m.remove(), { once:true }), 10);
 }
+function dateTitleOf(dateStr){
+  const t = todayStr();
+  if(dateStr === addDays(t,1)) return "morgen";
+  if(dateStr === t) return "vandaag";
+  return new Date(dateStr + "T12:00").toLocaleDateString("nl-NL", { weekday:"long", day:"numeric", month:"short" });
+}
 
-function moveItem(srcKey, dstKey, itemId){
-  if(srcKey === dstKey || !state.lists[srcKey] || !state.lists[dstKey]) return;
-  const it = state.lists[srcKey].items.find(x => x.id === itemId); if(!it) return;
-  state.lists[srcKey].items = state.lists[srcKey].items.filter(x => x.id !== itemId);
-  state.lists[dstKey].items.push(it);
-  render(); markDirty(srcKey); markDirty(dstKey);
-  toast("Verplaatst naar " + state.lists[dstKey].name);
+function moveItem(srcRef, dstRef, itemId){
+  if(refKey(srcRef) === refKey(dstRef) && srcRef.date === dstRef.date) return;
+  const srcArr = refArr(srcRef); if(!srcArr) return;
+  const idx = srcArr.findIndex(x => x.id === itemId); if(idx < 0) return;
+  const it = srcArr.splice(idx, 1)[0];
+  refArr(dstRef).push(it);
+  pushUndo(() => {
+    const a = refArr(dstRef); const i = a.findIndex(x => x.id === itemId); if(i>=0) a.splice(i,1);
+    refArr(srcRef).splice(Math.min(idx, refArr(srcRef).length), 0, it);
+    saveLocal();
+  }, [refKey(srcRef), refKey(dstRef)]);
+  render();
+  markDirty(refKey(srcRef)); markDirty(refKey(dstRef));
+  const dst = dstRef.date
+    ? CONFIG.DAY_PARTS.find(d=>d.key===dstRef.key).name + " · " + dateTitleOf(dstRef.date)
+    : state.lists[dstRef.key].name;
+  offerUndo("Verplaatst naar " + dst);
 }
 
 /* ============================================================
    Start
    ============================================================ */
-document.getElementById("date").textContent =
-  new Date().toLocaleDateString("nl-NL", { weekday:"long", day:"numeric", month:"long" });
-document.getElementById("ver").textContent = "v" + VERSION;
-document.getElementById("ver").onclick = showLog;
+document.getElementById("menuBtn").onclick = () => { updateMenuAuth(); document.getElementById("menu").showModal(); };
+document.getElementById("menuClose").onclick = () => document.getElementById("menu").close();
+document.getElementById("menuAuth").onclick = () => { document.getElementById("menu").close(); document.getElementById("login").showModal(); };
+document.getElementById("menuLogout").onclick = () => { document.getElementById("menu").close(); logout(); };
+document.getElementById("menuDate").onclick = () => {
+  document.getElementById("menu").close();
+  const v = prompt("Naar welke datum? (jjjj-mm-dd, 'morgen' of 'gisteren'):", viewDate);
+  if(!v) return;
+  const d = v.trim() === "morgen" ? addDays(todayStr(),1) : v.trim() === "gisteren" ? addDays(todayStr(),-1) : v.trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ toast("Onbekende datum"); return; }
+  goTo(d);
+};
+document.getElementById("menuLog").onclick = () => { document.getElementById("menu").close(); showLog(); };
+document.getElementById("menuVer").textContent = "v" + VERSION + (user ? " · " + user : "");
 document.getElementById("logClose").onclick = () => document.getElementById("logd").close();
 document.getElementById("logClear").onclick = () => { state.log = []; showLog(); };
-document.getElementById("authBtn").onclick = () => user ? logout() : document.getElementById("login").showModal();
 document.getElementById("loginGo").onclick = () => { document.getElementById("login").close(); loginFlow(); };
 document.getElementById("loginNo").onclick = () => document.getElementById("login").close();
+document.getElementById("fab").onclick = addTopic;
 
-document.getElementById("histBtn").onclick = showHistory;
-document.getElementById("histSearch").oninput = e => renderHistory(e.target.value);
-document.getElementById("histClose").onclick = () => document.getElementById("hist").close();
-document.getElementById("histClear").onclick = () => {
-  if(!confirm("Hele historie wissen?")) return;
-  state.history.items = [];
-  markDirty("history");
-  document.getElementById("hist").close();
-  toast("Historie gewist");
-};
+document.getElementById("prevDay").onclick = () => goTo(addDays(viewDate, -1));
+document.getElementById("nextDay").onclick = () => goTo(addDays(viewDate, 1));
+document.getElementById("dateBox").onclick = () => { if(viewDate !== todayStr()) goTo(todayStr()); };
+
+/* swipe links/rechts = vorige/volgende dag */
+let swipeX = null, swipeY = null;
+document.getElementById("grid").addEventListener("touchstart", e => {
+  swipeX = e.touches[0].clientX; swipeY = e.touches[0].clientY;
+}, { passive: true });
+document.getElementById("grid").addEventListener("touchend", e => {
+  if(swipeX === null) return;
+  const dx = e.changedTouches[0].clientX - swipeX;
+  const dy = e.changedTouches[0].clientY - swipeY;
+  if(Math.abs(dx) > 70 && Math.abs(dx) > 2.5 * Math.abs(dy))
+    goTo(addDays(viewDate, dx < 0 ? 1 : -1));
+  swipeX = null;
+}, { passive: true });
 
 loadLocal();
 log("App gestart — v" + VERSION + " (" + location.origin + ")");
-const archived = rollover();
-render(); updateAuthBtn();
-if(archived) toast(archived + " afgeronde taak(en) naar de historie");
+render();
+updateMenuAuth();
 
 // Live-sync: pull elke 10 s zolang het scherm zichtbaar is, direct bij tab-focus
 setInterval(() => { if(document.visibilityState === "visible") pull(); }, 10000);
 document.addEventListener("visibilitychange", () => {
   if(document.visibilityState === "visible"){
-    const n = rollover();
-    if(n) toast(n + " afgeronde taak(en) naar de historie");
-    render(); pull();
+    if(viewDate === todayStr()) render();
+    pull();
   }
 });
 
 // Google Identity Services laden; zodra geladen: stille login-poging
-// (gebruik je bestaande Google-sessie zonder dat er iets te zien of te klikken valt)
 if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
   const s = document.createElement("script");
   s.src = "https://accounts.google.com/gsi/client";
@@ -676,7 +766,7 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
   };
   s.onerror = (ev) => {
     log("GIS-script NIET geladen — netwerkfout of blocker (adblocker/shields/VPN?)", { type: "loaderror", event: ev && ev.type });
-    toast("Google-login kon niet laden (accounts.google.com geblokkeerd?) — zie logboek via v" + VERSION);
+    toast("Google-login kon niet laden (accounts.google.com geblokkeerd?) — zie menu → Logboek");
   };
   document.head.appendChild(s);
 }
