@@ -121,7 +121,8 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 
 <div class="badges" id="badgesDay"></div>
 <div class="badges" id="badgesTopic"></div>
-<div class="grid" id="grid"></div>
+<div class="grid" id="gridDay"></div>
+<div class="grid" id="gridTopic" style="padding-top:0"></div>
 
 <button id="fab" title="Nieuwe lijst">＋</button>
 <div id="status"><div id="toast"></div></div>
@@ -181,7 +182,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.4.3";
+const VERSION = "0.4.5";
 
 /* ============================================================
    State & opslag
@@ -209,7 +210,11 @@ function addDays(dateStr, n){
   d.setDate(d.getDate() + n);
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 }
-function nowISO(){ return viewDate + "T" + new Date().toTimeString().slice(0,5); }
+function nowISO(){
+  // ECHTE datum-tijd, nooit de bekeken dag: sync-timestamps met een toekomstige
+  // datum maken de server onbedoeld "altijd nieuwer" → sync-data op andere apparaten.
+  return todayStr() + "T" + new Date().toTimeString().slice(0,5);
+}
 
 function dayItems(date, key){
   if(!state.days[date]) state.days[date] = {};
@@ -446,7 +451,8 @@ async function pull(force){
       if(!srv) continue;
       if(k.startsWith("day:")){
         const d = k.slice(4);
-        if(!dirtyKeys.has(k) && (srv.updated || "") > ((state.days[d] && state.days[d].updated) || "")){
+        if(dirtyKeys.has(k)) continue;          // eigen werk eerst
+        if((srv.updated || "") > ((state.days[d] && state.days[d].updated) || "")){
           const day = {};
           for(const key of DAY_KEYS) day[key] = (srv.items && srv.items[key]) || [];
           day.updated = srv.updated;
@@ -460,7 +466,11 @@ async function pull(force){
           if(!state.topics.some(t => listKey(t.id) === k))
             state.topics.push({ id: k.slice(6), name: srv.name || k.slice(6) });
         } else if(!dirtyKeys.has(k) && (srv.updated || "") > (state.lists[k].updated || "")){
-          state.lists[k] = srv; changed = true;
+          // samenvoegen op item-id: items die alleen op de server bestaan erbij halen
+          const local = state.lists[k].items || [];
+          const ids = new Set(local.map(i => i.id));
+          for(const it of (srv.items || [])) if(!ids.has(it.id)) local.push(it);
+          state.lists[k].updated = srv.updated; changed = true;
         }
       }
     }
@@ -600,13 +610,15 @@ function deleteTopic(key){
 }
 
 function renderGrid(){
-  const g = document.getElementById("grid"); g.innerHTML = "";
-  // vaste volgorde: ochtend, middag, avond — daarna pas onderwerpen
+  const gDay = document.getElementById("gridDay");
+  const gTopic = document.getElementById("gridTopic");
+  gDay.innerHTML = ""; gTopic.innerHTML = "";
+  // vaste volgorde: ochtend, middag, avond — onderwerpen op hun eigen rij eronder
   for(const d of CONFIG.DAY_PARTS) if(openLists.has(d.key))
-    g.appendChild(makeColumn({ date: viewDate, key: d.key },
+    gDay.appendChild(makeColumn({ date: viewDate, key: d.key },
       { name: d.name, color: d.color }));
   for(const t of state.topics) if(openLists.has(listKey(t.id)))
-    g.appendChild(makeColumn({ date: null, key: listKey(t.id) }, state.lists[listKey(t.id)]));
+    gTopic.appendChild(makeColumn({ date: null, key: listKey(t.id) }, state.lists[listKey(t.id)]));
 }
 
 function makeColumn(ref, list){
@@ -784,17 +796,20 @@ document.getElementById("dateBox").onclick = () => { if(viewDate !== todayStr())
 
 /* swipe links/rechts = vorige/volgende dag */
 let swipeX = null, swipeY = null;
-document.getElementById("grid").addEventListener("touchstart", e => {
-  swipeX = e.touches[0].clientX; swipeY = e.touches[0].clientY;
-}, { passive: true });
-document.getElementById("grid").addEventListener("touchend", e => {
-  if(swipeX === null) return;
-  const dx = e.changedTouches[0].clientX - swipeX;
-  const dy = e.changedTouches[0].clientY - swipeY;
-  if(Math.abs(dx) > 70 && Math.abs(dx) > 2.5 * Math.abs(dy))
-    goTo(addDays(viewDate, dx < 0 ? 1 : -1));
-  swipeX = null;
-}, { passive: true });
+for(const gid of ["gridDay", "gridTopic"]){
+  const g = document.getElementById(gid);
+  g.addEventListener("touchstart", e => {
+    swipeX = e.touches[0].clientX; swipeY = e.touches[0].clientY;
+  }, { passive: true });
+  g.addEventListener("touchend", e => {
+    if(swipeX === null) return;
+    const dx = e.changedTouches[0].clientX - swipeX;
+    const dy = e.changedTouches[0].clientY - swipeY;
+    if(Math.abs(dx) > 70 && Math.abs(dx) > 2.5 * Math.abs(dy))
+      goTo(addDays(viewDate, dx < 0 ? 1 : -1));
+    swipeX = null;
+  }, { passive: true });
+}
 
 loadLocal();
 log("App gestart — v" + VERSION + " (" + location.origin + ")");
