@@ -123,6 +123,17 @@ dialog#login p{color:var(--muted);font-size:13.5px;margin:0 0 18px}
   </div>
 </dialog>
 
+<dialog id="logd">
+  <h3>📋 Logboek</h3>
+  <p>Nieuwste eerst. Fouten staan ook in de browserconsole (F12 → Console).</p>
+  <div id="logBox" style="max-height:50vh;overflow:auto;background:#0f172a;color:#e2e8f0;
+    border-radius:10px;padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap"></div>
+  <div style="margin-top:14px">
+    <button class="btn sec" id="logClear">Wis logboek</button>
+    <button class="btn pri" id="logClose">Sluiten</button>
+  </div>
+</dialog>
+
 <script>
 /* ============================================================
    CONFIG — hier je eigen waarden invullen
@@ -142,7 +153,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.3.1";
+const VERSION = "0.3.2";
 
 /* ============================================================
    State & opslag — per badge (lijst) één JSON-file
@@ -201,7 +212,8 @@ function initGIS(){
           { headers:{ Authorization:"Bearer " + accessToken }});
         const info = await r.json();
         user = info.email;
-      }catch(e){}
+      }catch(e){ log("userinfo ophalen mislukt", e); }
+      log("Ingelogd als " + (user || "onbekend") + " — sync gestart");
       updateAuthBtn();
       toast(user ? "Ingelogd als " + user + " — sync met Drive" : "Ingelogd");
       pull(true);      // serverdata ophalen
@@ -226,6 +238,7 @@ function loginFlow(prompt){
     if(initGIS() && requestToken(prompt || "")) clearInterval(iv);
     else if((waited += 250) >= 5000){
       clearInterval(iv);
+      log("GIS-script na 5 s nog niet beschikbaar (window.google ontbreekt)");
       toast("Google-login niet geladen — herlaad de pagina of check of accounts.google.com geblokkeerd is (adblocker)");
     }
   }, 250);
@@ -287,9 +300,11 @@ async function pushDirty(){
       await api("put", k, payload);
       dirtyKeys.delete(k);
     }
+    log("Push oké: " + keys.length + " lijst(en) naar Drive");
     updateSyncBar("gesynchroniseerd");
     pull();                       // meteen andermans wijzigingen ophalen
   }catch(e){
+    log("Push mislukt (" + dirtyKeys.size + " lijsten blijven dirty)", e);
     updateSyncBar(e && e.message === "locked"
       ? "tijdelijk geblokkeerd (te veel mislukte pogingen) — over enkele minuten opnieuw"
       : "sync mislukt — probeert over 10 s opnieuw");
@@ -323,8 +338,8 @@ async function pull(force){
         state.lists[k] = srv; changed = true;
       }
     }
-    if(changed){ render(); updateSyncBar("gesynchroniseerd"); }
-  }catch(e){ /* volgende poll weer proberen */ }
+    if(changed){ render(); updateSyncBar("gesynchroniseerd"); log("Pull oké: wijzigingen van server overgenomen"); }
+  }catch(e){ log("Pull mislukt", e); }
 }
 function updateSyncBar(txt){
   const s = document.getElementById("syncbar");
@@ -421,10 +436,28 @@ function renderHistory(q){
 /* ============================================================
    UI
    ============================================================ */
+/* ============================================================
+   Logging — console + in-app logboek (max 100 regels)
+   Tik op het versienummer (v rechtsboven) om het logboek te lezen.
+   ============================================================ */
+function log(msg, err){
+  const line = nowISO() + "  " + msg + (err ? "  ⚠ " + (err && err.message ? err.message : JSON.stringify(err)) : "");
+  state.log = state.log || [];
+  state.log.push(line);
+  if(state.log.length > 100) state.log.shift();
+  if(err) console.error("[vandaag] " + msg, err);
+  else console.log("[vandaag] " + msg);
+}
 function toast(msg){
+  log(msg);
   const t = document.getElementById("toast");
   t.textContent = msg; t.classList.add("show");
   clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 2600);
+}
+function showLog(){
+  const box = document.getElementById("logBox");
+  box.textContent = (state.log || []).slice().reverse().join("\n") || "(leeg logboek)";
+  document.getElementById("logd").showModal();
 }
 function render(){ renderBadges(); renderGrid(); saveLocal(); }
 
@@ -583,6 +616,9 @@ function moveItem(srcKey, dstKey, itemId){
 document.getElementById("date").textContent =
   new Date().toLocaleDateString("nl-NL", { weekday:"long", day:"numeric", month:"long" });
 document.getElementById("ver").textContent = "v" + VERSION;
+document.getElementById("ver").onclick = showLog;
+document.getElementById("logClose").onclick = () => document.getElementById("logd").close();
+document.getElementById("logClear").onclick = () => { state.log = []; showLog(); };
 document.getElementById("authBtn").onclick = () => user ? logout() : document.getElementById("login").showModal();
 document.getElementById("loginGo").onclick = () => { document.getElementById("login").close(); loginFlow(); };
 document.getElementById("loginNo").onclick = () => document.getElementById("login").close();
@@ -599,6 +635,7 @@ document.getElementById("histClear").onclick = () => {
 };
 
 loadLocal();
+log("App gestart — v" + VERSION + " (" + location.origin + ")");
 const archived = rollover();
 render(); updateAuthBtn();
 if(archived) toast(archived + " afgeronde taak(en) naar de historie");
@@ -619,12 +656,16 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
   const s = document.createElement("script");
   s.src = "https://accounts.google.com/gsi/client";
   s.onload = () => {
+    log("GIS-script geladen (accounts.google.com/gsi/client)");
     if(initGIS()){
       requestToken("");           // stil: geen venster; faalt het, dan blijft de app lokaal
       loginRequested = false;
     }
   };
-  s.onerror = () => toast("Google-login kon niet laden (accounts.google.com geblokkeerd?)");
+  s.onerror = (ev) => {
+    log("GIS-script NIET geladen — netwerkfout of blocker (adblocker/shields/VPN?)", { type: "loaderror", event: ev && ev.type });
+    toast("Google-login kon niet laden (accounts.google.com geblokkeerd?) — zie logboek via v" + VERSION);
+  };
   document.head.appendChild(s);
 }
 // Service worker alleen bij echte hosting
