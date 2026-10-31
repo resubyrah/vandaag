@@ -65,6 +65,10 @@ menu.move button:hover{background:var(--accent-soft)}
 #status>div{background:#0f172a;color:#fff;font-size:12.5px;padding:6px 14px;border-radius:999px;opacity:0;transition:.3s}
 #status>div.show{opacity:.92}
 #ver{color:#9ca3af;font-size:11px}
+.iconbtn{border:none;background:none;cursor:pointer;font-size:16px;color:#9ca3af;
+  padding:4px 6px;border-radius:8px;line-height:1}
+.iconbtn:hover{background:var(--accent-soft);color:var(--accent)}
+.iconbtn .cnt{font-size:10px;color:var(--muted);margin-left:2px}
 #syncbar{color:#9ca3af;font-size:11px}
 .col h2 .min{border:none;background:#f1f3f7;color:var(--muted);border-radius:999px;
   width:20px;height:20px;line-height:1;cursor:pointer;font-weight:700;font-size:14px;padding:0}
@@ -95,7 +99,7 @@ dialog#login p{color:var(--muted);font-size:13.5px;margin:0 0 18px}
   <span class="spacer"></span>
   <span id="ver"></span>
   <span id="syncbar"></span>
-  <button class="badge" id="histBtn" title="Historie">🕘</button>
+  <button class="iconbtn" id="histBtn" title="Historie" hidden>🕘</button>
   <button class="badge" id="authBtn">🔑 Inloggen</button>
 </header>
 
@@ -153,7 +157,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.3.2";
+const VERSION = "0.3.3";
 
 /* ============================================================
    State & opslag — per badge (lijst) één JSON-file
@@ -172,12 +176,14 @@ const listKey = t => "topic:" + t;
 function loadLocal(){
   try{
     const s = JSON.parse(localStorage.getItem(LS_KEY));
-    if(s){ state = s; openLists = new Set(s.openLists || DAY_KEYS); activeTopic = s.activeTopic || null; }
-  }catch(e){}
+    if(s){
+      state = s; openLists = new Set(s.openLists || DAY_KEYS); activeTopic = s.activeTopic || null;
+      (s.dirty || []).forEach(k => dirtyKeys.add(k));   // ongepushte wijzigingen na herstart opnieuw syncen
+    }
+  }catch(e){ log("Lokale data lezen mislukt", e); }
   if(!state.lists) state.lists = {};
   for(const d of CONFIG.DAY_PARTS) if(!state.lists[d.key]) state.lists[d.key] = { name:d.name, color:d.color, items:[] };
   if(!state.history) state.history = { name:"Historie", items: [] };
-  if(s.dirty) s.dirty.forEach(k => dirtyKeys.add(k));   // ongepushte wijzigingen na herstart opnieuw syncen
   if(!state.lastDay) state.lastDay = todayStr();
 }
 function saveLocal(){
@@ -459,7 +465,13 @@ function showLog(){
   box.textContent = (state.log || []).slice().reverse().join("\n") || "(leeg logboek)";
   document.getElementById("logd").showModal();
 }
-function render(){ renderBadges(); renderGrid(); saveLocal(); }
+function render(){ renderBadges(); renderGrid(); renderHistBtn(); saveLocal(); }
+function renderHistBtn(){
+  const b = document.getElementById("histBtn");
+  const n = (state.history.items || []).length;
+  b.hidden = n === 0;                       // geen historie → geen knop
+  b.innerHTML = n ? '🕘<span class="cnt">' + n + '</span>' : "🕘";
+}
 
 function renderBadges(){
   const el = document.getElementById("badges"); el.innerHTML = "";
