@@ -181,7 +181,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.4.2";
+const VERSION = "0.4.3";
 
 /* ============================================================
    State & opslag
@@ -385,6 +385,7 @@ async function api(action, key, data){
   if(!res.ok) throw new Error("HTTP " + res.status);
   const r = await res.json();
   if(r && r.ok === false && r.error === "locked") throw new Error("locked");
+  if(r && r.ok === false) throw new Error(r.error || "onbekende serverfout");
   return r;
 }
 /* ============================================================
