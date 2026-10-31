@@ -4,7 +4,7 @@
  * én deze cache-naam verhogen (bijv. vandaag-v0.1.0 → vandaag-v0.2.0),
  * zodat oude caches automatisch gewist worden.
  */
-const CACHE = "vandaag-v0.4.0";
+const CACHE = "vandaag-v0.4.1";
 const ASSETS = [
   "index.html",
   "manifest.json",
@@ -28,17 +28,16 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
 
-  // Apps Script / Google API nooit cachen: altijd door naar het netwerk
-  if (url.hostname.endsWith("script.google.com") || url.hostname.endsWith("googleapis.com")) {
-    e.respondWith(fetch(e.request));
-    return;
-  }
+  // ALLE cross-origin verkeer (Apps Script, Google API's) en alle POSTS:
+  // NIET aanraken — Safari breekt op respondWith(fetch()) hiervan.
+  // De browser doet die requests zelf, direct, zonder service worker.
+  if(url.origin !== location.origin || e.request.method !== "GET") return;
 
-  // App-shell: cache-first, op de achtergrond verversen (stale-while-revalidate)
+  // App-shell (eigen GET's): cache-first, op de achtergrond verversen
   e.respondWith(
     caches.match(e.request).then(cached => {
       const fresh = fetch(e.request).then(res => {
-        if (res && res.ok) {
+        if(res && res.ok){
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
