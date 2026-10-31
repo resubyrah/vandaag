@@ -4,7 +4,7 @@
  * én deze cache-naam verhogen (bijv. vandaag-v0.1.0 → vandaag-v0.2.0),
  * zodat oude caches automatisch gewist worden.
  */
-const CACHE = "vandaag-v0.3.0";
+const CACHE = "vandaag-v0.3.1";
 const ASSETS = [
   "index.html",
   "manifest.json",
