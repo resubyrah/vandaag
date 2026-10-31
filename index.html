@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#0f172a" />
 <title>Vandaag</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Ccircle cx='32' cy='16' r='7' fill='%23ffd251'/%3E%3Cpath d='M17 33l10 10 20-22' stroke='%23ffffff' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="manifest" href="manifest.json" />
@@ -119,7 +119,8 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 </header>
 <div id="syncrow"></div>
 
-<div class="badges" id="badges"></div>
+<div class="badges" id="badgesDay"></div>
+<div class="badges" id="badgesTopic"></div>
 <div class="grid" id="grid"></div>
 
 <button id="fab" title="Nieuwe lijst">＋</button>
@@ -180,7 +181,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.4.1";
+const VERSION = "0.4.2";
 
 /* ============================================================
    State & opslag
@@ -310,6 +311,7 @@ function initGIS(){
         user = info.email;
       }catch(e){ log("userinfo ophalen mislukt", e); }
       log("Ingelogd als " + (user || "onbekend") + " — sync gestart");
+      saveToken();                         // token bewaren: volgende keer stilletjes weer in
       updateMenuAuth();
       toast(user ? "Ingelogd als " + user + " — sync met Drive" : "Ingelogd");
       pull(true);
@@ -341,7 +343,28 @@ function loginFlow(prompt){
 function logout(){
   if(accessToken && window.google) try{ google.accounts.oauth2.revoke(accessToken, ()=>{}); }catch(e){}
   user = null; accessToken = null;
+  try{ localStorage.removeItem("vandaag_tok"); }catch(e){}
   updateMenuAuth(); toast("Uitgelogd — alleen lokaal");
+}
+/* Token bewaren/hergebruiken: de enige échte stille login (Safari blokkeert
+   popups zonder tik, dus GIS-silent werkt daar niet). Token is ~1 u geldig;
+   binnen die tijd kom je bij herladen automatisch weer ingelogd binnen. */
+function saveToken(){
+  try{ localStorage.setItem("vandaag_tok", JSON.stringify({ t: accessToken, u: user, exp: Date.now() + 55*60000 })); }catch(e){}
+}
+function loadToken(){
+  try{
+    const s = JSON.parse(localStorage.getItem("vandaag_tok"));
+    if(s && s.t && Date.now() < s.exp){
+      accessToken = s.t; user = s.u;
+      log("Token hergebruikt — ingelogd als " + user);
+      updateMenuAuth();
+      toast("Ingelogd als " + user + " — sync met Drive");
+      pull(true); pushDirty(); updateSyncBar();
+      return true;
+    }
+  }catch(e){}
+  return false;
 }
 function updateMenuAuth(){
   document.getElementById("menuAuth").hidden = !!user;
@@ -501,7 +524,9 @@ function goTo(dateStr){
 }
 
 function renderBadges(){
-  const el = document.getElementById("badges"); el.innerHTML = "";
+  const elDay = document.getElementById("badgesDay");
+  const elTopic = document.getElementById("badgesTopic");
+  elDay.innerHTML = ""; elTopic.innerHTML = "";
   const mkBadge = (key, {removeable}={}) => {
     const isDay = DAY_KEYS.includes(key);
     const list = isDay ? { name: CONFIG.DAY_PARTS.find(d=>d.key===key).name }
@@ -515,8 +540,9 @@ function renderBadges(){
     b.oncontextmenu = e => { if(removeable){ e.preventDefault(); deleteTopic(key); } };
     return b;
   };
-  for(const d of CONFIG.DAY_PARTS) if(!openLists.has(d.key)) el.appendChild(mkBadge(d.key));
-  for(const t of state.topics) if(!openLists.has(listKey(t.id))) el.appendChild(mkBadge(listKey(t.id), {removeable:true}));
+  // vaste volgorde: dagdelen in config-volgorde, daarna onderwerpen op hun eigen regel
+  for(const d of CONFIG.DAY_PARTS) if(!openLists.has(d.key)) elDay.appendChild(mkBadge(d.key));
+  for(const t of state.topics) if(!openLists.has(listKey(t.id))) elTopic.appendChild(mkBadge(listKey(t.id), {removeable:true}));
 }
 
 function toggleList(key){
@@ -574,15 +600,12 @@ function deleteTopic(key){
 
 function renderGrid(){
   const g = document.getElementById("grid"); g.innerHTML = "";
-  for(const key of openLists){
-    const isDay = DAY_KEYS.includes(key);
-    const dp = CONFIG.DAY_PARTS.find(d => d.key === key);
-    const col = makeColumn(
-      { date: isDay ? viewDate : null, key },
-      isDay ? { name: dp.name, color: dp.color } : state.lists[key]
-    );
-    g.appendChild(col);
-  }
+  // vaste volgorde: ochtend, middag, avond — daarna pas onderwerpen
+  for(const d of CONFIG.DAY_PARTS) if(openLists.has(d.key))
+    g.appendChild(makeColumn({ date: viewDate, key: d.key },
+      { name: d.name, color: d.color }));
+  for(const t of state.topics) if(openLists.has(listKey(t.id)))
+    g.appendChild(makeColumn({ date: null, key: listKey(t.id) }, state.lists[listKey(t.id)]));
 }
 
 function makeColumn(ref, list){
@@ -746,7 +769,10 @@ document.getElementById("menuVer").textContent = "v" + VERSION + (user ? " · " 
 document.getElementById("logClose").onclick = () => document.getElementById("logd").close();
 document.getElementById("logClear").onclick = () => { state.log = []; showLog(); };
 document.getElementById("loginGo").onclick = () => { document.getElementById("login").close(); loginFlow(); };
-document.getElementById("loginNo").onclick = () => document.getElementById("login").close();
+document.getElementById("loginNo").onclick = () => {
+  document.getElementById("login").close();
+  try{ localStorage.setItem("vandaag_local", "1"); }catch(e){}   // niet meer automatisch vragen
+};
 document.getElementById("fab").onclick = addTopic;
 document.getElementById("newlistOk").onclick = confirmAddTopic;
 document.getElementById("newlistName").onkeydown = e => { if(e.key === "Enter") confirmAddTopic(); };
@@ -773,6 +799,13 @@ loadLocal();
 log("App gestart — v" + VERSION + " (" + location.origin + ")");
 render();
 updateMenuAuth();
+// stille terugkeer via bewaard token; anders één keer de loginkaart tonen
+if(!loadToken()){
+  setTimeout(() => {
+    if(!accessToken && !localStorage.getItem("vandaag_local"))
+      document.getElementById("login").showModal();
+  }, 700);
+}
 
 // Live-sync: pull elke 10 s zolang het scherm zichtbaar is, direct bij tab-focus
 setInterval(() => { if(document.visibilityState === "visible") pull(); }, 10000);
@@ -789,10 +822,7 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
   s.src = "https://accounts.google.com/gsi/client";
   s.onload = () => {
     log("GIS-script geladen (accounts.google.com/gsi/client)");
-    if(initGIS()){
-      requestToken("");           // stil: geen venster; faalt het, dan blijft de app lokaal
-      loginRequested = false;
-    }
+    initGIS();    // geen automatische silent-poging: Safari blokkeert de popup zonder tik
   };
   s.onerror = (ev) => {
     log("GIS-script NIET geladen — netwerkfout of blocker (adblocker/shields/VPN?)", { type: "loaderror", event: ev && ev.type });
