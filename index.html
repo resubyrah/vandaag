@@ -39,13 +39,13 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 .iconbtn:hover{background:var(--accent-soft);color:var(--accent)}
 .iconbtn:disabled{opacity:.25;cursor:default}
 .badge{border:1.5px solid var(--line);background:var(--card);border-radius:999px;
-  padding:7px 14px;font-size:13.5px;font-weight:600;cursor:pointer;user-select:none;
-  display:inline-flex;align-items:center;gap:6px;transition:.15s;color:var(--ink)}
+  padding:11px 20px;font-size:16px;font-weight:600;cursor:pointer;user-select:none;
+  display:inline-flex;align-items:center;gap:9px;transition:.15s;color:var(--ink)}
 .badge:hover{border-color:var(--accent)}
 .badge.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.55}
 .badge .count{font-size:11px;background:rgba(0,0,0,.06);border-radius:999px;padding:1px 7px;color:var(--muted)}
-.badges{display:none;gap:8px;flex-wrap:wrap;padding:2px 16px 70px;align-items:center;justify-content:center}
+.badges{display:none;gap:10px;flex-wrap:wrap;padding:2px 16px 70px;align-items:center;justify-content:center}
 .badges:empty{padding:0}
 .badge.ochtend.open{color:#b45309;background:#fffbeb;border-color:var(--ochtend)}
 .badge.middag.open{color:#047857;background:#ecfdf5;border-color:var(--middag)}
@@ -53,7 +53,15 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 .grid{display:grid;gap:14px;padding:14px 16px 90px;
   grid-template-columns:repeat(auto-fill,minmax(165px,1fr));max-width:1200px;margin:0 auto;
   touch-action:pan-y}
-.col{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+/* standaardlijsten (dagdelen + boodschappen): vast 4 naast elkaar, mobiel 2×2 */
+#gridDay{grid-template-columns:repeat(4,minmax(0,1fr));max-width:900px}
+/* eigen lijsten: groepen van max. 5 */
+#gridTopic{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+@media (max-width:640px){
+  #gridDay,#gridTopic{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid{padding:10px 10px 90px}
+}
+.col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px;min-height:120px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column}
 .col.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
 .col h2{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
@@ -63,7 +71,7 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 .item{display:flex;align-items:center;gap:8px;padding:8px 6px;border-radius:10px;border-bottom:1px solid #f0f0f0;cursor:grab}
 .item:last-child{border-bottom:none}
 .item:hover{background:#fafafa}
-.item.done .txt{text-decoration:line-through;color:var(--muted)}
+.item.done .txt{color:#9ca3af}
 .item .txt{flex:1;font-size:14px;word-break:break-word}
 .item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:none}
 .item .mv,.item .del{border:none;background:none;cursor:pointer;font-size:15px;color:#c7ccd6;padding:2px 4px;border-radius:6px;flex:none}
@@ -84,7 +92,7 @@ menu.move button:hover{background:var(--accent-soft)}
   padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;pointer-events:auto}
 #syncbar{color:#9ca3af;font-size:11px;flex:none}
 .col h2 .min{border:none;background:#f1f3f7;color:var(--muted);border-radius:999px;
-  width:20px;height:20px;line-height:1;cursor:pointer;font-weight:700;font-size:14px;padding:0;flex:none}
+  width:22px;height:20px;line-height:1;cursor:pointer;font-size:13px;padding:0;flex:none}
 .col h2 .min:hover{background:var(--accent-soft);color:var(--accent)}
 #fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;
   background:var(--accent);color:#fff;font-size:28px;border:none;line-height:1;z-index:20;
@@ -105,9 +113,21 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 #menuBox .btn{width:100%;margin:0}
 #menuVer{color:#9ca3af;font-size:11px;text-align:center;margin:6px 0 0}
 #syncrow .sdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.col h2 .plus{border:none;background:#f1f3f7;color:var(--ink);border-radius:999px;
-  width:20px;height:20px;line-height:1;cursor:pointer;font-weight:700;font-size:14px;padding:0;flex:none}
-.col h2 .plus:hover{background:var(--accent-soft);color:var(--accent)}
+.col .plus{position:absolute;right:10px;bottom:10px;border:none;background:var(--accent);color:#fff;border-radius:50%;
+  width:26px;height:26px;line-height:1;cursor:pointer;font-size:17px;padding:0;flex:none;
+  box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.col .plus:hover{filter:brightness(1.08)}
+.col .addrow{display:flex;gap:8px;align-items:center;margin-top:8px}
+.col .addrow input{flex:1;min-width:0}
+dialog .inrow{display:flex;gap:8px;align-items:center}
+dialog .inrow input{flex:1}
+dialog .inrow .plusbtn{border:none;background:var(--accent);color:#fff;border-radius:10px;
+  width:40px;height:40px;font-size:20px;line-height:1;cursor:pointer;flex:none}
+dialog .inrow .plusbtn:hover{filter:brightness(1.08)}
+#listdColors{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+#listdColors button{width:30px;height:30px;border-radius:50%;border:2.5px solid transparent;cursor:pointer;padding:0}
+#listdColors button.sel{border-color:var(--ink)}
+#listdColors button:hover{transform:scale(1.1)}
 </style>
 </head>
 <body>
@@ -160,11 +180,25 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 
 <dialog id="itemd">
   <h3 id="itemdTitle">Nieuw item</h3>
-  <input type="text" id="itemdInput" />
+  <div class="inrow">
+    <input type="text" id="itemdInput" />
+    <button class="plusbtn" id="itemdPlus" title="Toevoegen en verder">＋</button>
+  </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end">
     <button class="btn sec" id="itemdMove" hidden>⇄ Verplaatsen</button>
     <button class="btn sec" id="itemdDel" hidden style="color:#dc2626">🗑 Verwijderen</button>
     <button class="btn pri" id="itemdOk">Opslaan</button>
+  </div>
+</dialog>
+
+<dialog id="listd">
+  <h3 id="listdTitle">Lijst</h3>
+  <input type="text" id="listdName" />
+  <div id="listdColors"></div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+    <button class="btn sec" id="listdUp" title="Eerder in de rij">▲ Eerder</button>
+    <button class="btn sec" id="listdDown" title="Later in de rij">▼ Later</button>
+    <button class="btn pri" id="listdOk" style="flex:1">Opslaan</button>
   </div>
 </dialog>
 
@@ -190,7 +224,7 @@ const CONFIG = {
   // Deploy-URL van het Apps Script-web-app (Code.gs):  /exec
   SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzamyI7CO1jr7pP3q4redliWCmTEbSD55G2j7p7yxUAHv9L-B7V0s4kNMXduk4KbaOr/exec",
   DAY_PARTS: [
-    { key:"ochtend", name:"Ochtend", color:"var(--ochtend)", icon:"🌅" },
+    { key:"ochtend", name:"Ochtend", color:"var(--ochtend)", icon:"🌤️" },
     { key:"middag",  name:"Middag",  color:"var(--middag)",  icon:"☀️" },
     { key:"avond",   name:"Avond",   color:"var(--avond)",   icon:"🌙" }
   ],
@@ -205,7 +239,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.5.3";
+const VERSION = "0.5.4";
 
 /* ============================================================
    State & opslag
@@ -258,7 +292,8 @@ function loadLocal(){
     const s = JSON.parse(localStorage.getItem(LS_KEY));
     if(s){
       state = { topics: s.topics || [], lists: s.lists || {}, days: s.days || {} };
-      openLists = new Set(s.openLists || DAY_KEYS);
+      // geen opgeslagen openLists (oude data): dan de standaard-set incl. boodschappen
+      openLists = new Set(s.openLists || [...DAY_KEYS, ...CONFIG.STANDARD_TOPICS.map(t => listKey(t.id))]);
       activeTopic = s.activeTopic || null;
       (s.dirty || []).forEach(k => dirtyKeys.add(k));
       /* ---- migratie v0.3 → v0.4: dagdelen uit state.lists + oude historie ---- */
@@ -692,12 +727,19 @@ function renderGrid(){
   const gDay = document.getElementById("gridDay");
   const gTopic = document.getElementById("gridTopic");
   gDay.innerHTML = ""; gTopic.innerHTML = "";
-  // vaste volgorde: ochtend, middag, avond — onderwerpen op hun eigen rij eronder
+  // vaste groep: ochtend, middag, avond + boodschappen — altijd bij elkaar, max 4 breed
   for(const d of CONFIG.DAY_PARTS) if(openLists.has(d.key))
     gDay.appendChild(makeColumn({ date: viewDate, key: d.key },
       { name: d.name, color: d.color }));
-  for(const t of state.topics) if(openLists.has(listKey(t.id)))
-    gTopic.appendChild(makeColumn({ date: null, key: listKey(t.id) }, state.lists[listKey(t.id)]));
+  for(const st of CONFIG.STANDARD_TOPICS){ const k = listKey(st.id);
+    if(openLists.has(k)) gDay.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
+  }
+  // eigen lijsten er direct achteraan, in groepen van max. 5 (mobiel 2)
+  for(const t of state.topics){
+    if(CONFIG.STANDARD_TOPICS.some(s => s.id === t.id)) continue;
+    const k = listKey(t.id);
+    if(openLists.has(k)) gTopic.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
+  }
 }
 
 function listTitle(ref){
@@ -716,14 +758,21 @@ function makeColumn(ref, list){
   // eigen lijsten: de randkleur bepaalt de kleur van de kaart
   if(!ref.date && list && list.color) col.style.borderColor = list.color;
   const h = document.createElement("h2");
-  h.appendChild(document.createTextNode(listTitle(ref)));
-  const sp = document.createElement("span"); sp.style.flex = "1"; h.appendChild(sp);
-  const plus = document.createElement("button");
-  plus.className = "plus"; plus.textContent = "＋"; plus.title = "Nieuw item";
-  plus.onclick = () => openItemModal(ref, null);
-  h.appendChild(plus);
+  const t = ref.date ? null : state.topics.find(x => listKey(x.id) === ref.key);
+  const icon = ref.date ? CONFIG.DAY_PARTS.find(d => d.key === ref.key).icon : (t && t.icon);
+  const isStandard = !!ref.date || CONFIG.STANDARD_TOPICS.some(s => listKey(s.id) === ref.key);
+  // standaardlijsten: alleen icoon, geen titel; eigen lijsten: titel = tik voor instellingen
+  if(isStandard){ h.title = listTitle(ref); h.appendChild(document.createTextNode(icon || listTitle(ref))); h.style.justifyContent = "center"; }
+  else{
+    const ttl = document.createElement("span");
+    ttl.textContent = (icon ? icon + " " : "") + (state.lists[ref.key] ? state.lists[ref.key].name : ref.key);
+    ttl.style.cursor = "pointer"; ttl.title = "Tik: naam, kleur en volgorde aanpassen";
+    ttl.onclick = () => openListModal(ref.key);
+    h.appendChild(ttl);
+    const sp = document.createElement("span"); sp.style.flex = "1"; h.appendChild(sp);
+  }
   const min = document.createElement("button");
-  min.className = "min"; min.textContent = "–"; min.title = "Minimaliseren — badge komt terug in de rij";
+  min.className = "min"; min.textContent = "︿"; min.title = "Minimaliseren — chip komt terug in de rij";
   min.onclick = () => toggleList(ref.key);
   h.appendChild(min);
   col.appendChild(h);
@@ -732,6 +781,12 @@ function makeColumn(ref, list){
   const items = refArr(ref);
   for(const it of items) box.appendChild(makeItem(ref, it));
   col.appendChild(box);
+
+  // blauwe ＋ rechtsonder in de kaart
+  const plus = document.createElement("button");
+  plus.className = "plus"; plus.textContent = "＋"; plus.title = "Nieuw item";
+  plus.onclick = () => openItemModal(ref, null);
+  col.appendChild(plus);
 
   col.addEventListener("dragover", e => { e.preventDefault(); col.classList.add("drag-over"); });
   col.addEventListener("dragleave", () => col.classList.remove("drag-over"));
@@ -752,8 +807,20 @@ function openItemModal(ref, it){
   inp.value = it ? it.text : "";
   document.getElementById("itemdMove").hidden = !it;
   document.getElementById("itemdDel").hidden = !it;
+  document.getElementById("itemdPlus").hidden = !!it;   // ＋ alleen bij nieuw: hele lijst invoeren
+  document.getElementById("itemdOk").textContent = it ? "Opslaan" : "Opslaan & sluiten";
   document.getElementById("itemd").showModal();
   setTimeout(() => { inp.focus(); if(it) inp.select(); }, 60);
+}
+/* ＋ naast het invoerveld: item toevoegen en meteen het volgende typen */
+function itemdAddAnother(){
+  const inp = document.getElementById("itemdInput");
+  const v = (inp.value || "").trim();
+  const ctx = itemdCtx || {};
+  if(!v || !ctx.ref || ctx.it) return;
+  addItem(ctx.ref, v);
+  inp.value = "";
+  setTimeout(() => inp.focus(), 50);
 }
 function itemdSave(){
   const v = (document.getElementById("itemdInput").value || "").trim();
@@ -902,7 +969,62 @@ document.getElementById("fab").onclick = addTopic;
 document.getElementById("newlistOk").onclick = confirmAddTopic;
 document.getElementById("newlistName").onkeydown = e => { if(e.key === "Enter") confirmAddTopic(); };
 document.getElementById("itemdOk").onclick = itemdSave;
-document.getElementById("itemdInput").onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); itemdSave(); } };
+document.getElementById("itemdPlus").onclick = itemdAddAnother;
+document.getElementById("itemdInput").onkeydown = e => {
+  if(e.key === "Enter"){
+    e.preventDefault();
+    if(itemdCtx && !itemdCtx.it) itemdAddAnother();   // nieuw item: toevoegen en doorgaan
+    else itemdSave();
+  }
+};
+
+/* ---------- lijst-instellingen: naam, kleur, volgorde ---------- */
+let listdKey = null;
+function openListModal(key){
+  listdKey = key;
+  const t = state.topics.find(x => listKey(x.id) === key);
+  const l = state.lists[key] || {};
+  document.getElementById("listdTitle").textContent = "Lijst — " + (t ? t.name : key);
+  document.getElementById("listdName").value = t ? t.name : "";
+  const box = document.getElementById("listdColors");
+  box.innerHTML = "";
+  for(const c of CONFIG.TOPIC_COLORS){
+    const b = document.createElement("button");
+    b.style.background = c;
+    if(l.color === c) b.className = "sel";
+    b.title = "Kleur " + c;
+    b.onclick = () => { l.color = c; t.color = c; markDirty(key); render(); openListModal(key); };
+    box.appendChild(b);
+  }
+  document.getElementById("listd").showModal();
+}
+function listdSave(){
+  const key = listdKey; listdKey = null;
+  document.getElementById("listd").close();
+  if(!key) return;
+  const t = state.topics.find(x => listKey(x.id) === key);
+  const name = (document.getElementById("listdName").value || "").trim();
+  if(t && name && name !== t.name){
+    t.name = name;
+    if(state.lists[key]) state.lists[key].name = name;
+    markDirty(key);
+  }
+  saveLocal(); render();
+}
+function listdMove(dir){
+  if(!listdKey) return;
+  const own = state.topics.filter(t => !CONFIG.STANDARD_TOPICS.some(s => s.id === t.id));
+  const i = own.findIndex(t => listKey(t.id) === listdKey);
+  const j = i + dir;
+  if(i < 0 || j < 0 || j >= own.length) return;
+  const a = state.topics.indexOf(own[i]), b = state.topics.indexOf(own[j]);
+  state.topics[a] = own[j]; state.topics[b] = own[i];
+  saveLocal(); render(); openListModal(listdKey);
+}
+document.getElementById("listdOk").onclick = listdSave;
+document.getElementById("listdUp").onclick = () => listdMove(-1);
+document.getElementById("listdDown").onclick = () => listdMove(1);
+document.getElementById("listdName").onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); listdSave(); } };
 document.getElementById("itemdDel").onclick = itemdDelete;
 document.getElementById("itemdMove").onclick = itemdMove;
 

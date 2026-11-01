@@ -1,10 +1,10 @@
 # Vandaag — Use cases & tests
 
-Testdatum: 1 november 2026 · App-versie: **v0.5.3** · Testomgeving: geautomatiseerde logica-tests in Node (DOM-stubs, géén login) + handmatige checklist voor UI/sync.
+Testdatum: 1 november 2026 · App-versie: **v0.5.4** · Testomgeving: geautomatiseerde logica-tests in Node (DOM-stubs, géén login) + handmatige checklist voor UI/sync.
 
 **Kernprincipe: inloggen is altijd optioneel.** De app start altijd lokaal; sync met Google Drive is een uitbreiding die je elk moment kunt hervatten via ☁️ rechtsboven of ☰ → Inloggen.
 
-## Geautomatiseerde tests — resultaat: **29/29 geslaagd** ✅
+## Geautomatiseerde tests — resultaat: **39/39 geslaagd** (29 regressie + 10 nieuw in v0.5.4) ✅
 
 | # | Use case | Verwacht gedrag | Resultaat |
 |---|----------|-----------------|-----------|
@@ -71,3 +71,20 @@ Deze use cases heb je grotendeels al getest tijdens het bouwen; hier als herhaal
 ## In deze sessie geïmplementeerd (v0.5.3)
 - **Login volledig optioneel**: knop "Nu even niet" in het loginscherm, ☁️-icoontje rechtsboven zichtbaar zodra je níet sync't (klik = sync hervatten); verdwijnt zodra je ingelogd bent.
 - **Geen challenge bij openen**: de app start stil; alleen een bewaard token wordt hergebruikt. Eerst typen, sync komt later.
+
+## v0.5.4 — nieuwe use cases (automatisch getest, 10/10)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 30 | Hele lijst invoeren | ＋ naast invoerveld: item toevoegen en meteen verder typen, modal blijft open | ✅ PASS |
+| 31 | Invoerveld reset | na ＋ staat het veld leeg klaar voor het volgende item | ✅ PASS |
+| 32 | Meerdere items achtereen | 3 items in één keer invoeren gaat goed | ✅ PASS |
+| 33 | Lijst-instellingen openen | tik op titel eigen lijst → naam + 8 kleuren | ✅ PASS |
+| 34 | Kleur instellen | gekleurde cirkel kiezen zet de lijstkleur | ✅ PASS |
+| 35 | Titel aanpassen | nieuwe naam wordt opgeslagen (en mee-gesynchroniseerd) | ✅ PASS |
+| 36 | Volgorde/prio | ▲▼ verplaatst de lijst binnen de eigen rij | ✅ PASS |
+| 37 | Standaardlijst-kop | ochtend/middag/avond/boodschappen: alleen icoon, geen titel | ✅ PASS |
+| 38 | ＋ en ︿ in kaart | blauwe ＋ onderin de kaart; minimaliseren met dakje ︿ i.p.v. streepje | ✅ PASS |
+| 39 | Groepering | boodschappen in de standaardrij van 4; eigen lijsten direct erachter in eigen grid; 🌤️ als ochtendicoon | ✅ PASS |
+
+Handmatig te checken in de browser (visueel): chips groter (16px, meer vulling), standaardrij max 4 breed / mobiel 2×2, afgevinkte items grijs zonder doorstreping.
