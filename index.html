@@ -20,7 +20,9 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh}
 header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--line);padding:10px 10px;display:flex;align-items:center;gap:4px}
+  border-bottom:1px solid var(--line);padding:10px 8px;
+  display:grid;grid-template-columns:48px 1fr 48px;align-items:center}
+.headermid{display:flex;align-items:center;justify-content:center;gap:2px;width:100%}
 .spacer{flex:1}
 .datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;padding:0 4px}
 .datebox h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.02em;line-height:1.15}
@@ -111,14 +113,15 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 <body>
 <header>
   <button class="iconbtn" id="menuBtn" title="Menu">☰</button>
-  <span class="spacer"></span>
-  <button class="navbtn" id="prevDay" title="Vorige dag">‹</button>
-  <div class="datebox" id="dateBox" title="Tik: terug naar vandaag">
-    <h1 id="dateTitle">vandaag</h1>
-    <span class="date" id="dateSub"></span>
+  <div class="headermid">
+    <button class="navbtn" id="prevDay" title="Vorige dag">‹</button>
+    <div class="datebox" id="dateBox" title="Tik: terug naar vandaag">
+      <h1 id="dateTitle"></h1>
+      <span class="date" id="dateSub"></span>
+    </div>
+    <button class="navbtn" id="nextDay" title="Volgende dag">›</button>
   </div>
-  <button class="navbtn" id="nextDay" title="Volgende dag">›</button>
-  <span class="spacer"></span>
+  <button class="iconbtn" id="syncBtn" title="Sync met Drive hervatten" hidden>☁️</button>
 </header>
 <div id="syncrow"></div>
 
@@ -135,7 +138,7 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
   <h3>Vandaag — cloud</h3>
   <p>Log in met je Google-account om je dagen en lijsten automatisch als JSON-files in Google Drive op te slaan (via Google Apps Script). Zonder login werkt de app lokaal op dit apparaat.</p>
   <button class="btn pri" id="loginGo">Inloggen met Google</button>
-  <button class="btn sec" id="loginNo">Lokaal gebruiken</button>
+  <button class="btn sec" id="loginNo">Nu even niet</button>
 </dialog>
 
 <dialog id="logd">
@@ -202,7 +205,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.5.1";
+const VERSION = "0.5.3";
 
 /* ============================================================
    State & opslag
@@ -219,7 +222,7 @@ let viewDate = null;                      // YYYY-MM-DD die je bekijkt
 let user = null, accessToken = null;
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
-const listKey = t => "topic:" + t;
+function listKey(t){ return "topic:" + t; }   // function-declaratie: overal beschikbaar, ook vóór deze regel
 
 function todayStr(){
   const d = new Date();
@@ -403,6 +406,10 @@ function updateMenuAuth(){
   document.getElementById("menuLogout").hidden = !user;
   document.getElementById("menuUser").textContent = user || "";
   document.getElementById("menuVer").textContent = "v" + VERSION + (user ? " · " + user : "");
+  // sync-icoontje rechtsboven: alleen zichtbaar als je níet (meer) met Drive sync't
+  const sb = document.getElementById("syncBtn");
+  sb.hidden = !!user;
+  sb.title = user ? "" : "Sync met Drive hervatten";
   updateSyncBar();
 }
 
@@ -582,17 +589,12 @@ function render(){ renderBadges(); renderGrid(); renderDate(); saveLocal(); }
 
 function renderDate(){
   const d = new Date(viewDate + "T12:00");
-  const t = todayStr();
-  let title;
-  if(viewDate === t) title = "vandaag";
-  else if(viewDate === addDays(t, 1)) title = "morgen";
-  else if(viewDate === addDays(t, -1)) title = "gisteren";
-  else title = d.toLocaleDateString("nl-NL", { weekday:"long" });
-  document.getElementById("dateTitle").textContent = title;
+  document.getElementById("dateTitle").textContent =
+    d.toLocaleDateString("nl-NL", { weekday:"long" });
   document.getElementById("dateSub").textContent =
     d.toLocaleDateString("nl-NL", { day:"numeric", month:"long" })
-    + (viewDate === t ? "" : " — tik voor vandaag");
-  document.title = title.charAt(0).toUpperCase() + title.slice(1) + " · Vandaag";
+    + (viewDate !== todayStr() ? " — tik voor vandaag" : "");
+  document.title = d.toLocaleDateString("nl-NL", { weekday:"long", day:"numeric", month:"long" }) + " · Vandaag";
 }
 function goTo(dateStr){
   viewDate = dateStr;
@@ -893,8 +895,9 @@ document.getElementById("logClear").onclick = () => { state.log = []; showLog();
 document.getElementById("loginGo").onclick = () => { document.getElementById("login").close(); loginFlow(); };
 document.getElementById("loginNo").onclick = () => {
   document.getElementById("login").close();
-  try{ localStorage.setItem("vandaag_local", "1"); }catch(e){}   // niet meer automatisch vragen
+  toast("Lokaal — sync later via ☁️ rechtsboven of ☰ → Inloggen");
 };
+document.getElementById("syncBtn").onclick = () => document.getElementById("login").showModal();
 document.getElementById("fab").onclick = addTopic;
 document.getElementById("newlistOk").onclick = confirmAddTopic;
 document.getElementById("newlistName").onkeydown = e => { if(e.key === "Enter") confirmAddTopic(); };
