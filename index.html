@@ -38,23 +38,23 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
   padding:6px 9px;border-radius:10px;line-height:1;flex:none}
 .iconbtn:hover{background:var(--accent-soft);color:var(--accent)}
 .iconbtn:disabled{opacity:.25;cursor:default}
-.badge{border:1.5px solid var(--line);background:var(--card);border-radius:999px;
-  padding:11px 20px;font-size:16px;font-weight:600;cursor:pointer;user-select:none;
-  display:inline-flex;align-items:center;gap:9px;transition:.15s;color:var(--ink)}
-.badge:hover{border-color:var(--accent)}
-.badge.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
-.badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.55}
-.badge .count{font-size:11px;background:rgba(0,0,0,.06);border-radius:999px;padding:1px 7px;color:var(--muted)}
+.badge{border:1.5px solid transparent;border-radius:999px;
+  padding:11px 20px;font-size:16px;font-weight:700;cursor:pointer;user-select:none;
+  display:inline-flex;align-items:center;gap:9px;transition:.15s;color:#fff}
+.badge:hover{filter:brightness(1.06)}
+.badge.open{box-shadow:inset 0 0 0 2px rgba(255,255,255,.4)}
+.badge .dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.7}
+.badge .count{font-size:11px;background:rgba(255,255,255,.28);border-radius:999px;padding:1px 7px;color:#fff}
 .badges{display:none;gap:10px;flex-wrap:wrap;padding:2px 16px 70px;align-items:center;justify-content:center}
 .badges:empty{padding:0}
-.badge.ochtend.open{color:#b45309;background:#fffbeb;border-color:var(--ochtend)}
-.badge.middag.open{color:#047857;background:#ecfdf5;border-color:var(--middag)}
-.badge.avond.open{color:#4338ca;background:#eef2ff;border-color:var(--avond)}
+.badge.ochtend{background:var(--ochtend)}
+.badge.middag{background:var(--middag)}
+.badge.avond{background:var(--avond)}
 .grid{display:grid;gap:14px;padding:14px 16px 90px;
   grid-template-columns:repeat(auto-fill,minmax(165px,1fr));max-width:1200px;margin:0 auto;
   touch-action:pan-y}
 /* standaardlijsten (dagdelen + boodschappen): vast 4 naast elkaar, mobiel 2×2 */
-#gridDay{grid-template-columns:repeat(4,minmax(0,1fr));max-width:900px}
+#gridDay{grid-template-columns:repeat(4,minmax(0,1fr));max-width:900px;padding-bottom:0}
 /* eigen lijsten: groepen van max. 5 */
 #gridTopic{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
 @media (max-width:640px){
@@ -62,7 +62,9 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
   .grid{padding:10px 10px 90px}
 }
 .col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:12px;min-height:120px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column}
+  padding:12px;min-height:120px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column;
+  align-self:start}
+.col .listbox{max-height:340px;overflow-y:auto;overscroll-behavior:contain}
 .col.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
 .col h2{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
 .col h2 .stripe{flex:1;height:3px;border-radius:2px;background:var(--c,var(--line))}
@@ -72,8 +74,10 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 .item:last-child{border-bottom:none}
 .item:hover{background:#fafafa}
 .item.done .txt{color:#9ca3af}
+.item.done{opacity:.5}
+.item.done input[type=checkbox]{accent-color:#a7c9b4}
 .item .txt{flex:1;font-size:14px;word-break:break-word}
-.item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.item input[type=checkbox]{width:18px;height:18px;accent-color:#16a34a;flex:none}
 .item .mv,.item .del{border:none;background:none;cursor:pointer;font-size:15px;color:#c7ccd6;padding:2px 4px;border-radius:6px;flex:none}
 .item:hover .mv,.item:hover .del{color:var(--muted)}
 .item .mv:hover{background:var(--accent-soft);color:var(--accent)}
@@ -91,9 +95,9 @@ menu.move button:hover{background:var(--accent-soft)}
 #status button{border:none;background:rgba(255,255,255,.18);color:#fff;border-radius:999px;
   padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;pointer-events:auto}
 #syncbar{color:#9ca3af;font-size:11px;flex:none}
-.col h2 .min{border:none;background:#f1f3f7;color:var(--muted);border-radius:999px;
-  width:22px;height:20px;line-height:1;cursor:pointer;font-size:13px;padding:0;flex:none}
-.col h2 .min:hover{background:var(--accent-soft);color:var(--accent)}
+.col h2 .min{border:1px solid var(--line);background:#f1f3f7;color:var(--muted);border-radius:8px;
+  width:28px;height:22px;line-height:1;cursor:pointer;font-size:17px;padding:0 0 1px;flex:none;margin-left:auto}
+.col h2 .min:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 #fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;
   background:var(--accent);color:#fff;font-size:28px;border:none;line-height:1;z-index:20;
   box-shadow:0 6px 22px rgba(37,99,235,.45);cursor:pointer}
@@ -113,17 +117,16 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 #menuBox .btn{width:100%;margin:0}
 #menuVer{color:#9ca3af;font-size:11px;text-align:center;margin:6px 0 0}
 #syncrow .sdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.col .plus{position:absolute;right:10px;bottom:10px;border:none;background:var(--accent);color:#fff;border-radius:50%;
-  width:26px;height:26px;line-height:1;cursor:pointer;font-size:17px;padding:0;flex:none;
-  box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.col .plus:hover{filter:brightness(1.08)}
+.col .plus{position:absolute;right:10px;bottom:10px;border:1.5px solid var(--accent);background:var(--card);color:var(--accent);border-radius:50%;
+  width:26px;height:26px;line-height:1;cursor:pointer;font-size:16px;padding:0;flex:none}
+.col .plus:hover{background:var(--accent-soft)}
 .col .addrow{display:flex;gap:8px;align-items:center;margin-top:8px}
 .col .addrow input{flex:1;min-width:0}
 dialog .inrow{display:flex;gap:8px;align-items:center}
 dialog .inrow input{flex:1}
-dialog .inrow .plusbtn{border:none;background:var(--accent);color:#fff;border-radius:10px;
+dialog .inrow .plusbtn{border:1.5px solid var(--accent);background:var(--card);color:var(--accent);border-radius:10px;
   width:40px;height:40px;font-size:20px;line-height:1;cursor:pointer;flex:none}
-dialog .inrow .plusbtn:hover{filter:brightness(1.08)}
+dialog .inrow .plusbtn:hover{background:var(--accent-soft)}
 #listdColors{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 #listdColors button{width:30px;height:30px;border-radius:50%;border:2.5px solid transparent;cursor:pointer;padding:0}
 #listdColors button.sel{border-color:var(--ink)}
@@ -239,7 +242,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.5.4";
+const VERSION = "0.5.6";
 
 /* ============================================================
    State & opslag
@@ -650,10 +653,14 @@ function renderBadges(){
     b.title = isDay ? dp.name : (t ? t.name : "");
     const open = items.filter(i=>!i.done).length;
     b.innerHTML = `<span class="dot"></span>${label}<span class="count">${open}</span>`;
-    // eigen lijsten: gesloten chip in de eigen kleur
-    if(!isDay && !openLists.has(key) && state.lists[key] && state.lists[key].color){
-      b.style.borderColor = state.lists[key].color;
-      b.style.color = state.lists[key].color;
+    // full color: dagdelen in hun dagkleur, lijsten in hun eigen kleur (wit letterwerk)
+    const lc = state.lists[key];
+    if(isDay) b.style.background = dp.color;
+    else{
+      const tcol = (t && t.color) || (lc && lc.color) || "#64748b";
+      b.style.background = tcol;
+      if(openLists.has(key)) b.style.boxShadow = "inset 0 0 0 2px rgba(255,255,255,.4)";
+      else b.style.opacity = ".88";
     }
     b.onclick = e => { if(removeable && e.shiftKey){ deleteTopic(key); } else toggleList(key); };
     b.oncontextmenu = e => { if(removeable){ e.preventDefault(); deleteTopic(key); } };
@@ -762,7 +769,7 @@ function makeColumn(ref, list){
   const icon = ref.date ? CONFIG.DAY_PARTS.find(d => d.key === ref.key).icon : (t && t.icon);
   const isStandard = !!ref.date || CONFIG.STANDARD_TOPICS.some(s => listKey(s.id) === ref.key);
   // standaardlijsten: alleen icoon, geen titel; eigen lijsten: titel = tik voor instellingen
-  if(isStandard){ h.title = listTitle(ref); h.appendChild(document.createTextNode(icon || listTitle(ref))); h.style.justifyContent = "center"; }
+  if(isStandard){ h.title = listTitle(ref); h.appendChild(document.createTextNode(icon || listTitle(ref))); }
   else{
     const ttl = document.createElement("span");
     ttl.textContent = (icon ? icon + " " : "") + (state.lists[ref.key] ? state.lists[ref.key].name : ref.key);
@@ -772,12 +779,13 @@ function makeColumn(ref, list){
     const sp = document.createElement("span"); sp.style.flex = "1"; h.appendChild(sp);
   }
   const min = document.createElement("button");
-  min.className = "min"; min.textContent = "︿"; min.title = "Minimaliseren — chip komt terug in de rij";
+  min.className = "min"; min.textContent = "–"; min.title = "Inklappen — chip komt terug in de rij onderaan";
   min.onclick = () => toggleList(ref.key);
   h.appendChild(min);
   col.appendChild(h);
 
   const box = document.createElement("div");
+  box.className = "listbox";
   const items = refArr(ref);
   for(const it of items) box.appendChild(makeItem(ref, it));
   col.appendChild(box);
@@ -1053,7 +1061,24 @@ for(const gid of ["gridDay", "gridTopic"]){
   }, { passive: true });
 }
 
+/* boodschappen: afgevinkte items van vóór vandaag vergeten we — boodschappenlijst blijft kort */
+function cleanupBoodschappen(){
+  const k = listKey("boodschappen");
+  const l = state.lists[k];
+  if(!l || !l.items) return 0;
+  const today = todayStr();
+  const before = l.items.length;
+  l.items = l.items.filter(it => !it.done || !it.doneAt || it.doneAt.slice(0,10) >= today);
+  const removed = before - l.items.length;
+  if(removed){
+    saveLocal(); markDirty(k);
+    log("Boodschappen: " + removed + " afgevinkt item(s) van eerdere dagen gewist");
+  }
+  return removed;
+}
+
 loadLocal();
+cleanupBoodschappen();
 log("App gestart — v" + VERSION + " (" + location.origin + ") · apparaat: " + deviceId());
 render();
 updateMenuAuth();

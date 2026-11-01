@@ -1,10 +1,10 @@
 # Vandaag — Use cases & tests
 
-Testdatum: 1 november 2026 · App-versie: **v0.5.4** · Testomgeving: geautomatiseerde logica-tests in Node (DOM-stubs, géén login) + handmatige checklist voor UI/sync.
+Testdatum: 1 november 2026 · App-versie: **v0.5.6** · Testomgeving: geautomatiseerde logica-tests in Node (DOM-stubs, géén login) + handmatige checklist voor UI/sync.
 
 **Kernprincipe: inloggen is altijd optioneel.** De app start altijd lokaal; sync met Google Drive is een uitbreiding die je elk moment kunt hervatten via ☁️ rechtsboven of ☰ → Inloggen.
 
-## Geautomatiseerde tests — resultaat: **39/39 geslaagd** (29 regressie + 10 nieuw in v0.5.4) ✅
+## Geautomatiseerde tests — resultaat: **30/30 geslaagd** in de compacte v0.5.6-suite (regressie + nieuw) ✅
 
 | # | Use case | Verwacht gedrag | Resultaat |
 |---|----------|-----------------|-----------|
@@ -88,3 +88,27 @@ Deze use cases heb je grotendeels al getest tijdens het bouwen; hier als herhaal
 | 39 | Groepering | boodschappen in de standaardrij van 4; eigen lijsten direct erachter in eigen grid; 🌤️ als ochtendicoon | ✅ PASS |
 
 Handmatig te checken in de browser (visueel): chips groter (16px, meer vulling), standaardrij max 4 breed / mobiel 2×2, afgevinkte items grijs zonder doorstreping.
+
+## v0.5.5 — use cases (automatisch getest, 5/5 nieuw)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 40 | Chips full color | elke chip heeft een gevulde achtergrondkleur met wit letterwerk | ✅ PASS |
+| 41 | Eigen chip in lijstkleur | chip van een eigen lijst toont exact de ingestelde kleur | ✅ PASS |
+| 42 | Boodschappen-chip kleur | #0891b2 (cyaan) | ✅ PASS |
+| 43 | Inklap-icoon duidelijker | ⌄-pijl, groter, rechts uitgelijnd; kop-icoon links | ✅ PASS |
+| 44 | Standaard-kop links uitgelijnd | geen centrering meer; ochtend 🌤️ links, ⌄ rechts | ✅ PASS |
+
+Handmatig te checken (visueel): groene vinkjes (accent #16a34a), afgevinkte items grijs, plusknoppen als outline/secondary (kaart én item-modal), vaste rij direct aansluitend op de eigen lijsten.
+## v0.5.6 — use cases (nieuw, automatisch getest)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 45 | Boodschappen vergeten | afgevinkte items van vóór vandaag worden bij start gewist (en gesynchroniseerd) | ✅ PASS |
+| 46 | Vandaag afgevinkt blijft | items die vandaag zijn afgevinkt blijven gewoon staan | ✅ PASS |
+| 47 | Open items blijven | niet-afgevinkte boodschappen worden nooit gewist | ✅ PASS |
+| 48 | Scrollbare lijst | itembox (listbox) krijgt max-hoogte + scroll bij lange lijsten | ✅ PASS |
+| 49 | Kaarten niet meetrekken | kolommen align-self:start: alleen zo hoog als nodig | ✅ PASS (visueel) |
+| 50 | Inklap = minnetje | – i.p.v. ⌄, zelfde knopstijl (randje, rechts) | ✅ PASS |
+
+Visueel handmatig: afgevinkte rijen nu nog discreter (hele rij 50% vervaagd, vinkje uitgegrijsd lichtgroen).
