@@ -43,13 +43,13 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 .badge.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.55}
 .badge .count{font-size:11px;background:rgba(0,0,0,.06);border-radius:999px;padding:1px 7px;color:var(--muted)}
-.badges{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 0;align-items:center}
+.badges{display:none;gap:8px;flex-wrap:wrap;padding:2px 16px 70px;align-items:center;justify-content:center}
 .badges:empty{padding:0}
 .badge.ochtend.open{color:#b45309;background:#fffbeb;border-color:var(--ochtend)}
 .badge.middag.open{color:#047857;background:#ecfdf5;border-color:var(--middag)}
 .badge.avond.open{color:#4338ca;background:#eef2ff;border-color:var(--avond)}
 .grid{display:grid;gap:14px;padding:14px 16px 90px;
-  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));max-width:1200px;margin:0 auto;
+  grid-template-columns:repeat(auto-fill,minmax(165px,1fr));max-width:1200px;margin:0 auto;
   touch-action:pan-y}
 .col{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px;min-height:120px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column}
@@ -102,7 +102,10 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 #menuBox{display:flex;flex-direction:column;gap:8px}
 #menuBox .btn{width:100%;margin:0}
 #menuVer{color:#9ca3af;font-size:11px;text-align:center;margin:6px 0 0}
-@media (max-width:560px){ .grid{grid-template-columns:1fr} }
+#syncrow .sdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.col h2 .plus{border:none;background:#f1f3f7;color:var(--ink);border-radius:999px;
+  width:20px;height:20px;line-height:1;cursor:pointer;font-weight:700;font-size:14px;padding:0;flex:none}
+.col h2 .plus:hover{background:var(--accent-soft);color:var(--accent)}
 </style>
 </head>
 <body>
@@ -119,10 +122,11 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 </header>
 <div id="syncrow"></div>
 
-<div class="badges" id="badgesDay"></div>
-<div class="badges" id="badgesTopic"></div>
 <div class="grid" id="gridDay"></div>
 <div class="grid" id="gridTopic" style="padding-top:0"></div>
+
+<!-- geminimaliseerde lijsten: als chips bij elkaar, ónder de kaarten -->
+<div class="badges" id="badgesAll"></div>
 
 <button id="fab" title="Nieuwe lijst">＋</button>
 <div id="status"><div id="toast"></div></div>
@@ -151,6 +155,16 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
   <button class="btn pri" id="newlistOk" style="width:100%;margin:0">Toevoegen</button>
 </dialog>
 
+<dialog id="itemd">
+  <h3 id="itemdTitle">Nieuw item</h3>
+  <input type="text" id="itemdInput" />
+  <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end">
+    <button class="btn sec" id="itemdMove" hidden>⇄ Verplaatsen</button>
+    <button class="btn sec" id="itemdDel" hidden style="color:#dc2626">🗑 Verwijderen</button>
+    <button class="btn pri" id="itemdOk">Opslaan</button>
+  </div>
+</dialog>
+
 <dialog id="menu">
   <h3>☰ Menu</h3>
   <div id="menuBox">
@@ -173,16 +187,22 @@ const CONFIG = {
   // Deploy-URL van het Apps Script-web-app (Code.gs):  /exec
   SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzamyI7CO1jr7pP3q4redliWCmTEbSD55G2j7p7yxUAHv9L-B7V0s4kNMXduk4KbaOr/exec",
   DAY_PARTS: [
-    { key:"ochtend", name:"Ochtend", color:"var(--ochtend)" },
-    { key:"middag",  name:"Middag",  color:"var(--middag)"  },
-    { key:"avond",   name:"Avond",   color:"var(--avond)"   }
-  ]
+    { key:"ochtend", name:"Ochtend", color:"var(--ochtend)", icon:"🌅" },
+    { key:"middag",  name:"Middag",  color:"var(--middag)",  icon:"☀️" },
+    { key:"avond",   name:"Avond",   color:"var(--avond)",   icon:"🌙" }
+  ],
+  // vaste lijsten die altijd bestaan en niet verwijderbaar zijn
+  STANDARD_TOPICS: [
+    { id:"boodschappen", name:"Boodschappen", icon:"🛒", color:"#0891b2" }
+  ],
+  // kleuren voor zelfgemaakte lijsten: bepaalt de rand en de gesloten chip
+  TOPIC_COLORS: ["#ef4444","#f97316","#22c55e","#0ea5e9","#6366f1","#a855f7","#ec4899","#84cc16"]
 };
 
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.4.5";
+const VERSION = "0.5.1";
 
 /* ============================================================
    State & opslag
@@ -193,7 +213,7 @@ const VERSION = "0.4.5";
 const LS_KEY = "vandaag_state_v1";
 const DAY_KEYS = CONFIG.DAY_PARTS.map(d => d.key);
 let state = { topics: [], lists: {}, days: {} };
-let openLists = new Set(DAY_KEYS);        // dagdelen staan default open
+let openLists = new Set([...DAY_KEYS, ...CONFIG.STANDARD_TOPICS.map(t => listKey(t.id))]); // dagdelen + boodschappen standaard open
 let activeTopic = null;
 let viewDate = null;                      // YYYY-MM-DD die je bekijkt
 let user = null, accessToken = null;
@@ -262,6 +282,13 @@ function loadLocal(){
   }catch(e){ log("Lokale data lezen mislukt", e); }
   for(const d of CONFIG.DAY_PARTS) if(state.days[todayStr()] && !state.days[todayStr()][d.key]) dayItems(todayStr(), d.key);
   if(!state.lists) state.lists = {};
+  // vaste standaard-lijsten (boodschappen) garanderen
+  for(const st of CONFIG.STANDARD_TOPICS){
+    if(!state.topics.some(t => t.id === st.id))
+      state.topics.push({ id: st.id, name: st.name, icon: st.icon, color: st.color });
+    const k = listKey(st.id);
+    if(!state.lists[k]) state.lists[k] = { name: st.name, items: [] };
+  }
   viewDate = todayStr();
 }
 function saveLocal(){
@@ -375,17 +402,32 @@ function updateMenuAuth(){
   document.getElementById("menuAuth").hidden = !!user;
   document.getElementById("menuLogout").hidden = !user;
   document.getElementById("menuUser").textContent = user || "";
+  document.getElementById("menuVer").textContent = "v" + VERSION + (user ? " · " + user : "");
   updateSyncBar();
 }
 
 /* ============================================================
    Backend — Google Apps Script, per sync-key één JSON in Drive
    ============================================================ */
+/* ---------- apparaatnaam: voor de sync-recepten (per browser éénmalig) ---------- */
+function deviceId(){
+  let id = null;
+  try{ id = localStorage.getItem("vandaag_dev"); }catch(e){}
+  if(!id){
+    const ua = navigator.userAgent;
+    const kind = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android"
+      : /Macintosh/.test(ua) ? "Mac" : /Windows/.test(ua) ? "PC" : "toestel";
+    id = kind + "·" + Math.random().toString(36).slice(2,5);
+    try{ localStorage.setItem("vandaag_dev", id); }catch(e){}
+  }
+  return id;
+}
+
 async function api(action, key, data){
   const res = await fetch(CONFIG.SCRIPT_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action, key, data, token: accessToken })
+    body: JSON.stringify({ action, key, data, token: accessToken, device: deviceId() })
   });
   if(!res.ok) throw new Error("HTTP " + res.status);
   const r = await res.json();
@@ -402,7 +444,10 @@ let pushTimer = null, retryTimer = null;
 function markDirty(key){
   dirtyKeys.add(key);
   saveLocal();
-  if(!accessToken) return;
+  if(!accessToken){
+    if(!markDirty._hint){ markDirty._hint = true; toast("Lokaal bewaard — sync met Drive via ☰ → Inloggen"); }
+    return;
+  }
   updateSyncBar("syncing…");
   clearTimeout(pushTimer);
   pushTimer = setTimeout(pushDirty, 5000);
@@ -426,6 +471,7 @@ async function pushDirty(){
       if(!k.startsWith("day:") && !state.lists[k]){ dirtyKeys.delete(k); continue; }
       await api("put", k, payloadFor(k));
       dirtyKeys.delete(k);
+      log("Sync-recept: " + k + " → Drive (vanaf " + deviceId() + ")");
     }
     log("Push oké: " + keys.length + " key(s) naar Drive");
     updateSyncBar("gesynchroniseerd");
@@ -445,6 +491,7 @@ async function pull(force){
   try{
     const r = await api("getAll");
     const files = r.files || {};
+    if(files.audit && files.audit.entries) state.audit = files.audit.entries;   // sync-recepten bewaren
     let changed = false;
     for(const k of Object.keys(files)){
       const srv = files[k];
@@ -480,9 +527,17 @@ async function pull(force){
 function updateSyncBar(txt){
   const s = document.getElementById("syncrow");
   if(!s) return;
-  if(!accessToken){ s.textContent = ""; return; }
-  s.textContent = "· " + (txt || (dirtyKeys.size ? "te synchroniseren" : "gesynchroniseerd")) + " ·";
+  if(!accessToken){ s.innerHTML = ""; return; }
+  const now = new Date().toTimeString().slice(0,5);
+  if(txt === "gesynchroniseerd") lastSyncTime = now;
+  let dot = "#22c55e", label = txt || (dirtyKeys.size ? "te synchroniseren" : "gesynchroniseerd");
+  if(/mislukt|geblokkeerd/.test(label)) dot = "#ef4444";
+  else if(label === "syncing…") dot = "#93c5fd";
+  else if(!txt && dirtyKeys.size) dot = "#f59e0b";
+  s.innerHTML = '<span class="sdot" style="background:' + dot + '"></span>' + label
+    + (lastSyncTime ? " · " + lastSyncTime : "");
 }
+let lastSyncTime = "";
 
 /* ============================================================
    Logging — console + in-app logboek (menu → 📋 Logboek)
@@ -506,7 +561,17 @@ function toast(msg, actionEl){
 }
 function showLog(){
   const box = document.getElementById("logBox");
-  box.textContent = (state.log || []).slice().reverse().join("\n") || "(leeg logboek)";
+  let txt = (state.log || []).slice().reverse().join("\n") || "(leeg logboek)";
+  const audit = (state.audit || []).slice().reverse().slice(0, 30);
+  if(audit.length){
+    txt += "\n\n── sync-recepten (Drive, per apparaat) ──\n";
+    txt += audit.map(a => {
+      const d = new Date(a.t);
+      return d.toLocaleDateString("nl-NL") + " " + d.toTimeString().slice(0,5)
+        + "  " + a.key + "  ← " + (a.device || "?");
+    }).join("\n");
+  }
+  box.textContent = txt;
   document.getElementById("logd").showModal();
 }
 
@@ -535,25 +600,34 @@ function goTo(dateStr){
 }
 
 function renderBadges(){
-  const elDay = document.getElementById("badgesDay");
-  const elTopic = document.getElementById("badgesTopic");
-  elDay.innerHTML = ""; elTopic.innerHTML = "";
+  const el = document.getElementById("badgesAll");
+  el.innerHTML = "";
   const mkBadge = (key, {removeable}={}) => {
     const isDay = DAY_KEYS.includes(key);
-    const list = isDay ? { name: CONFIG.DAY_PARTS.find(d=>d.key===key).name }
-                       : state.lists[key];
-    const items = isDay ? dayItems(viewDate, key) : state.lists[key].items;
+    const t = isDay ? null : state.topics.find(x => listKey(x.id) === key);
+    const dp = isDay ? CONFIG.DAY_PARTS.find(d=>d.key===key) : null;
+    const label = isDay ? (dp.icon + " " + dp.name) : (t && t.icon ? (t.icon + " " + t.name) : (t ? t.name : key));
+    const items = isDay ? dayItems(viewDate, key) : (state.lists[key] || {items:[]}).items;
     const b = document.createElement("button");
     b.className = "badge" + (openLists.has(key) ? " open " + key : "");
+    b.title = isDay ? dp.name : (t ? t.name : "");
     const open = items.filter(i=>!i.done).length;
-    b.innerHTML = `<span class="dot"></span>${list.name}<span class="count">${open}</span>`;
+    b.innerHTML = `<span class="dot"></span>${label}<span class="count">${open}</span>`;
+    // eigen lijsten: gesloten chip in de eigen kleur
+    if(!isDay && !openLists.has(key) && state.lists[key] && state.lists[key].color){
+      b.style.borderColor = state.lists[key].color;
+      b.style.color = state.lists[key].color;
+    }
     b.onclick = e => { if(removeable && e.shiftKey){ deleteTopic(key); } else toggleList(key); };
     b.oncontextmenu = e => { if(removeable){ e.preventDefault(); deleteTopic(key); } };
     return b;
   };
-  // vaste volgorde: dagdelen in config-volgorde, daarna onderwerpen op hun eigen regel
-  for(const d of CONFIG.DAY_PARTS) if(!openLists.has(d.key)) elDay.appendChild(mkBadge(d.key));
-  for(const t of state.topics) if(!openLists.has(listKey(t.id))) elTopic.appendChild(mkBadge(listKey(t.id), {removeable:true}));
+  for(const d of CONFIG.DAY_PARTS) if(!openLists.has(d.key)) el.appendChild(mkBadge(d.key));
+  for(const t of state.topics){
+    const k = listKey(t.id);
+    if(!openLists.has(k)) el.appendChild(mkBadge(k, {removeable: !CONFIG.STANDARD_TOPICS.some(s => s.id === t.id)}));
+  }
+  el.style.display = el.children.length ? "flex" : "none";
 }
 
 function toggleList(key){
@@ -578,8 +652,10 @@ function confirmAddTopic(){
   document.getElementById("newlist").close();
   if(!name) return;
   const id = uid(), key = listKey(id);
-  state.topics.push({ id, name: name.trim() });
-  state.lists[key] = { name: name.trim(), items: [] };
+  const eigen = state.topics.filter(t => !CONFIG.STANDARD_TOPICS.some(s => s.id === t.id)).length;
+  const color = CONFIG.TOPIC_COLORS[eigen % CONFIG.TOPIC_COLORS.length];
+  state.topics.push({ id, name, color });
+  state.lists[key] = { name, color, items: [] };
   openLists.add(key); activeTopic = key;
   pushUndo(() => {                        // hele lijst weer weghalen
     state.topics = state.topics.filter(t => t.id !== id);
@@ -591,8 +667,9 @@ function confirmAddTopic(){
   offerUndo("Lijst '" + name.trim() + "' toegevoegd");
 }
 function deleteTopic(key){
-  if(!confirm('Lijst "' + state.lists[key].name + '" incl. taken verwijderen?')) return;
-  const id = key.slice(6), backup = state.lists[key], wasOpen = openLists.has(key);
+  const id = key.slice(6);
+  if(CONFIG.STANDARD_TOPICS.some(s => s.id === id)){ toast("Deze vaste lijst kan niet weg"); return; }
+  const backup = state.lists[key], wasOpen = openLists.has(key), backupTopic = state.topics.find(t => t.id === id);
   state.topics = state.topics.filter(t => t.id !== id);
   delete state.lists[key];
   openLists.delete(key);
@@ -600,7 +677,7 @@ function deleteTopic(key){
   pushUndo(() => {
     state.lists[key] = backup;
     if(!state.topics.some(t => t.id === id))
-      state.topics.push({ id, name: backup.name });
+      state.topics.push(backupTopic || { id, name: backup.name });
     if(wasOpen) openLists.add(key);
     saveLocal();
   }, [key]);
@@ -621,30 +698,36 @@ function renderGrid(){
     gTopic.appendChild(makeColumn({ date: null, key: listKey(t.id) }, state.lists[listKey(t.id)]));
 }
 
+function listTitle(ref){
+  if(ref.date){
+    const dp = CONFIG.DAY_PARTS.find(d => d.key === ref.key);
+    return dp.icon + " " + dp.name.toLowerCase();
+  }
+  const t = state.topics.find(x => listKey(x.id) === ref.key);
+  return (t && t.icon ? t.icon + " " : "") + (t ? t.name : ref.key);
+}
+
 function makeColumn(ref, list){
   const key = refKey(ref);
   const col = document.createElement("section");
   col.className = "col"; col.dataset.key = key;
+  // eigen lijsten: de randkleur bepaalt de kleur van de kaart
+  if(!ref.date && list && list.color) col.style.borderColor = list.color;
   const h = document.createElement("h2");
-  h.textContent = list.name;
-  const stripe = document.createElement("span");
-  stripe.className = "stripe"; stripe.style.setProperty("--c", list.color || "var(--line)");
-  h.appendChild(stripe);
+  h.appendChild(document.createTextNode(listTitle(ref)));
+  const sp = document.createElement("span"); sp.style.flex = "1"; h.appendChild(sp);
+  const plus = document.createElement("button");
+  plus.className = "plus"; plus.textContent = "＋"; plus.title = "Nieuw item";
+  plus.onclick = () => openItemModal(ref, null);
+  h.appendChild(plus);
   const min = document.createElement("button");
   min.className = "min"; min.textContent = "–"; min.title = "Minimaliseren — badge komt terug in de rij";
-  min.onclick = () => toggleList(ref.date ? ref.key : ref.key);
+  min.onclick = () => toggleList(ref.key);
   h.appendChild(min);
   col.appendChild(h);
 
-  const add = document.createElement("div"); add.className = "add";
-  const inp = document.createElement("input"); inp.type = "text";   // leeg veld, geen placeholder
-  inp.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); addItem(ref, inp.value); inp.value = ""; } };
-  add.appendChild(inp); col.appendChild(add);
-
   const box = document.createElement("div");
   const items = refArr(ref);
-  if(!items.length){ const e = document.createElement("div"); e.className="empty";
-    e.textContent = "leeg — type hierboven of sleep er iets heen"; box.appendChild(e); }
   for(const it of items) box.appendChild(makeItem(ref, it));
   col.appendChild(box);
 
@@ -656,6 +739,43 @@ function makeColumn(ref, list){
     moveItem({ date: date || null, key: srcKey }, ref, itemId);
   });
   return col;
+}
+
+/* ---------- item-modal: nieuw én bewerken in hetzelfde frisse venster ---------- */
+let itemdCtx = null;   // { ref, it|null }
+function openItemModal(ref, it){
+  itemdCtx = { ref, it };
+  document.getElementById("itemdTitle").textContent = it ? "Taak aanpassen" : "Nieuw item — " + listTitle(ref);
+  const inp = document.getElementById("itemdInput");
+  inp.value = it ? it.text : "";
+  document.getElementById("itemdMove").hidden = !it;
+  document.getElementById("itemdDel").hidden = !it;
+  document.getElementById("itemd").showModal();
+  setTimeout(() => { inp.focus(); if(it) inp.select(); }, 60);
+}
+function itemdSave(){
+  const v = (document.getElementById("itemdInput").value || "").trim();
+  const ctx = itemdCtx || {}; itemdCtx = null;
+  document.getElementById("itemd").close();
+  if(!v || !ctx.ref) return;
+  if(ctx.it){
+    if(v !== ctx.it.text){
+      const it = ctx.it, old = it.text;
+      it.text = v;
+      pushUndo(() => { it.text = old; saveLocal(); }, [refKey(ctx.ref)]);
+      render(); markDirty(refKey(ctx.ref));
+    }
+  } else addItem(ctx.ref, v);
+}
+function itemdDelete(){
+  const ctx = itemdCtx || {}; itemdCtx = null;
+  document.getElementById("itemd").close();
+  if(ctx.ref && ctx.it) deleteItem(ctx.ref, ctx.it);
+}
+function itemdMove(){
+  const ctx = itemdCtx || {}; itemdCtx = null;
+  document.getElementById("itemd").close();
+  if(ctx.ref && ctx.it) showMoveMenu(ctx.ref, ctx.it);   // gecentreerd venstermenu
 }
 
 function addItem(ref, value){
@@ -682,14 +802,7 @@ function toggleItem(ref, it, done){
   render(); markDirty(refKey(ref));
   if(done) offerUndo("Afgevinkt"); 
 }
-function editText(ref, it){
-  const v = prompt("Taak aanpassen:", it.text);
-  if(!v || !v.trim() || v.trim() === it.text) return;
-  const old = it.text;
-  it.text = v.trim();
-  pushUndo(() => { it.text = old; saveLocal(); }, [refKey(ref)]);
-  render(); markDirty(refKey(ref));
-}
+function editText(ref, it){ openItemModal(ref, it); }
 
 function makeItem(ref, it){
   const el = document.createElement("div");
@@ -697,43 +810,39 @@ function makeItem(ref, it){
   el.draggable = true;
   const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = it.done;
   const txt = document.createElement("span"); txt.className = "txt"; txt.textContent = it.text;
-  const mv = document.createElement("button"); mv.className = "mv"; mv.title = "Verplaatsen"; mv.textContent = "⇄";
-  const del = document.createElement("button"); del.className = "del"; del.title = "Verwijderen"; del.textContent = "✕";
-  el.append(cb, txt, mv, del);
+  el.append(cb, txt);
   el.addEventListener("dragstart", e =>
-    e.dataTransfer.setData("text/plain", (ref.date || "") + "|" + (ref.date ? ref.key : ref.key) + "|" + it.id));
+    e.dataTransfer.setData("text/plain", (ref.date || "") + "|" + ref.key + "|" + it.id));
   cb.onchange = () => toggleItem(ref, it, cb.checked);
-  txt.onclick = () => editText(ref, it);
-  del.onclick = () => deleteItem(ref, it);
-  mv.onclick = e => showMoveMenu(e, ref, it);
+  txt.onclick = () => openItemModal(ref, it);
   return el;
 }
 
-function showMoveMenu(e, srcRef, it){
+function showMoveMenu(srcRef, it, x, y){
   document.querySelector("menu.move")?.remove();
   const m = document.createElement("menu"); m.className = "move";
   const mk = (label, fn) => { const b = document.createElement("button"); b.textContent = label;
     b.onclick = () => { m.remove(); fn(); }; m.appendChild(b); };
   for(const k of openLists){
-    if(ref.date && k === srcRef.key) continue;       // zelfde dagdeel op zelfde dag
-    if(!ref.date && k === srcRef.key) continue;
+    if(srcRef.date ? (k === srcRef.key) : (k === srcRef.key)) continue;   // zelfde lijst op zelfde dag overslaan
     const isDay = DAY_KEYS.includes(k);
-    const name = isDay ? CONFIG.DAY_PARTS.find(d=>d.key===k).name : state.lists[k].name;
-    mk("→ " + name + (isDay ? "" : ""), () => moveItem(srcRef, { date: isDay ? viewDate : null, key: k }, it.id));
+    const name = isDay
+      ? CONFIG.DAY_PARTS.find(d=>d.key===k).icon + " " + CONFIG.DAY_PARTS.find(d=>d.key===k).name
+      : listTitle({ date: null, key: k });
+    mk("→ " + name, () => moveItem(srcRef, { date: isDay ? viewDate : null, key: k }, it.id));
   }
   mk("📅 → " + dateTitleOf(addDays(viewDate,1)), () =>
-    moveItem(srcRef, { date: addDays(viewDate,1), key: ref.date ? srcRef.key : "ochtend" }, it.id));
+    moveItem(srcRef, { date: addDays(viewDate,1), key: srcRef.date ? srcRef.key : "ochtend" }, it.id));
   mk("📅 Andere datum…", () => {
     const v = prompt("Verplaatsen naar datum (jjjj-mm-dd, of 'morgen'):", addDays(viewDate,1));
     if(!v) return;
     const d = v.trim() === "morgen" ? addDays(todayStr(),1) : v.trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ toast("Onbekende datum"); return; }
-    moveItem(srcRef, { date: d, key: ref.date ? srcRef.key : "ochtend" }, it.id);
+    moveItem(srcRef, { date: d, key: srcRef.date ? srcRef.key : "ochtend" }, it.id);
   });
   document.body.appendChild(m);
-  const r = e.target.getBoundingClientRect();
-  m.style.left = Math.min(r.left, innerWidth - 200) + "px";
-  m.style.top = Math.min(r.bottom + 6, innerHeight - m.offsetHeight - 10) + "px";
+  m.style.left = (x != null ? x : innerWidth/2 - 100) + "px";
+  m.style.top = (y != null ? y : innerHeight/3) + "px";
   setTimeout(() => document.addEventListener("click", () => m.remove(), { once:true }), 10);
 }
 function dateTitleOf(dateStr){
@@ -789,6 +898,14 @@ document.getElementById("loginNo").onclick = () => {
 document.getElementById("fab").onclick = addTopic;
 document.getElementById("newlistOk").onclick = confirmAddTopic;
 document.getElementById("newlistName").onkeydown = e => { if(e.key === "Enter") confirmAddTopic(); };
+document.getElementById("itemdOk").onclick = itemdSave;
+document.getElementById("itemdInput").onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); itemdSave(); } };
+document.getElementById("itemdDel").onclick = itemdDelete;
+document.getElementById("itemdMove").onclick = itemdMove;
+
+/* alle modals: klik ernaast (op de achtergrond) = sluiten */
+document.querySelectorAll("dialog").forEach(d =>
+  d.addEventListener("click", e => { if(e.target === d) d.close(); }));
 
 document.getElementById("prevDay").onclick = () => goTo(addDays(viewDate, -1));
 document.getElementById("nextDay").onclick = () => goTo(addDays(viewDate, 1));
@@ -812,16 +929,12 @@ for(const gid of ["gridDay", "gridTopic"]){
 }
 
 loadLocal();
-log("App gestart — v" + VERSION + " (" + location.origin + ")");
+log("App gestart — v" + VERSION + " (" + location.origin + ") · apparaat: " + deviceId());
 render();
 updateMenuAuth();
-// stille terugkeer via bewaard token; anders één keer de loginkaart tonen
-if(!loadToken()){
-  setTimeout(() => {
-    if(!accessToken && !localStorage.getItem("vandaag_local"))
-      document.getElementById("login").showModal();
-  }, 700);
-}
+// geen Google-challenge bij het openen: eerst gewoon lijstjes maken.
+// Alleen een bewaard token komt stilletjes terug; inloggen kan via ☰ → Inloggen.
+loadToken();
 
 // Live-sync: pull elke 10 s zolang het scherm zichtbaar is, direct bij tab-focus
 setInterval(() => { if(document.visibilityState === "visible") pull(); }, 10000);
