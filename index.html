@@ -56,15 +56,20 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 /* standaardlijsten (dagdelen + boodschappen): vast 4 naast elkaar, mobiel 2×2 */
 #gridDay{grid-template-columns:repeat(4,minmax(0,1fr));max-width:900px;padding-bottom:0}
 /* eigen lijsten: groepen van max. 5 */
-#gridTopic{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+#gridTopic{display:block;columns:200px 5;column-gap:14px}
+#gridTopic .col{margin-bottom:14px;break-inside:avoid}
 @media (max-width:640px){
-  #gridDay,#gridTopic{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #gridDay{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #gridTopic{columns:2}
   .grid{padding:10px 10px 90px}
 }
 .col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px;min-height:120px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column;
   align-self:start}
 .col .listbox{max-height:340px;overflow-y:auto;overscroll-behavior:contain}
+.col.collapsed{min-height:0;padding:8px 10px}
+.col.collapsed .listbox,.col.collapsed .plus{display:none}
+.col.collapsed h2{margin:0;cursor:pointer}
 .col.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
 .col h2{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
 .col h2 .stripe{flex:1;height:3px;border-radius:2px;background:var(--c,var(--line))}
@@ -227,7 +232,7 @@ const CONFIG = {
   // Deploy-URL van het Apps Script-web-app (Code.gs):  /exec
   SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzamyI7CO1jr7pP3q4redliWCmTEbSD55G2j7p7yxUAHv9L-B7V0s4kNMXduk4KbaOr/exec",
   DAY_PARTS: [
-    { key:"ochtend", name:"Ochtend", color:"var(--ochtend)", icon:"🌤️" },
+    { key:"ochtend", name:"Ochtend", color:"var(--ochtend)", icon:"☕" },
     { key:"middag",  name:"Middag",  color:"var(--middag)",  icon:"☀️" },
     { key:"avond",   name:"Avond",   color:"var(--avond)",   icon:"🌙" }
   ],
@@ -242,7 +247,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.5.6";
+const VERSION = "0.5.7";
 
 /* ============================================================
    State & opslag
@@ -623,7 +628,7 @@ function showLog(){
 /* ============================================================
    UI — dagweergave, badges, kolommen
    ============================================================ */
-function render(){ renderBadges(); renderGrid(); renderDate(); saveLocal(); }
+function render(){ renderGrid(); renderDate(); saveLocal(); }
 
 function renderDate(){
   const d = new Date(viewDate + "T12:00");
@@ -734,18 +739,18 @@ function renderGrid(){
   const gDay = document.getElementById("gridDay");
   const gTopic = document.getElementById("gridTopic");
   gDay.innerHTML = ""; gTopic.innerHTML = "";
-  // vaste groep: ochtend, middag, avond + boodschappen — altijd bij elkaar, max 4 breed
-  for(const d of CONFIG.DAY_PARTS) if(openLists.has(d.key))
+  // vaste groep: ochtend, middag, avond + boodschappen — altijd alle vier, ingeklapt = stub op eigen plek
+  for(const d of CONFIG.DAY_PARTS)
     gDay.appendChild(makeColumn({ date: viewDate, key: d.key },
       { name: d.name, color: d.color }));
   for(const st of CONFIG.STANDARD_TOPICS){ const k = listKey(st.id);
-    if(openLists.has(k)) gDay.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
+    gDay.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
   }
-  // eigen lijsten er direct achteraan, in groepen van max. 5 (mobiel 2)
+  // eigen lijsten er direct achteraan, als vloeiende reeks (masonry, geen lege plekken)
   for(const t of state.topics){
     if(CONFIG.STANDARD_TOPICS.some(s => s.id === t.id)) continue;
     const k = listKey(t.id);
-    if(openLists.has(k)) gTopic.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
+    gTopic.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
   }
 }
 
@@ -760,8 +765,9 @@ function listTitle(ref){
 
 function makeColumn(ref, list){
   const key = refKey(ref);
+  const collapsed = !openLists.has(ref.key);   // ingeklapt: compacte stub, zelfde plek in de rij
   const col = document.createElement("section");
-  col.className = "col"; col.dataset.key = key;
+  col.className = "col" + (collapsed ? " collapsed" : ""); col.dataset.key = key;
   // eigen lijsten: de randkleur bepaalt de kleur van de kaart
   if(!ref.date && list && list.color) col.style.borderColor = list.color;
   const h = document.createElement("h2");
@@ -773,20 +779,35 @@ function makeColumn(ref, list){
   else{
     const ttl = document.createElement("span");
     ttl.textContent = (icon ? icon + " " : "") + (state.lists[ref.key] ? state.lists[ref.key].name : ref.key);
-    ttl.style.cursor = "pointer"; ttl.title = "Tik: naam, kleur en volgorde aanpassen";
-    ttl.onclick = () => openListModal(ref.key);
+    if(!collapsed){
+      ttl.style.cursor = "pointer"; ttl.title = "Tik: naam, kleur en volgorde aanpassen";
+      ttl.onclick = () => openListModal(ref.key);
+    }
     h.appendChild(ttl);
     const sp = document.createElement("span"); sp.style.flex = "1"; h.appendChild(sp);
   }
+  if(collapsed){
+    // stub: open-teller + tik op de kop = weer openen
+    const items0 = visibleItems(ref);
+    const open0 = items0.filter(i => !i.done).length;
+    const cnt = document.createElement("span");
+    cnt.className = "count"; cnt.textContent = open0;
+    h.appendChild(cnt);
+    h.title = "Tik om te openen (" + open0 + " open)";
+    h.onclick = e => { if(e.target === min) return; toggleList(ref.key); };
+  }
   const min = document.createElement("button");
-  min.className = "min"; min.textContent = "–"; min.title = "Inklappen — chip komt terug in de rij onderaan";
+  min.className = "min"; min.textContent = collapsed ? "＋" : "–";
+  min.title = collapsed ? "Openen" : "Inklappen — kaart blijft op z’n plek, alleen kleiner";
   min.onclick = () => toggleList(ref.key);
   h.appendChild(min);
   col.appendChild(h);
 
+  if(collapsed) return finishCol(col, ref);
+
   const box = document.createElement("div");
   box.className = "listbox";
-  const items = refArr(ref);
+  const items = visibleItems(ref);
   for(const it of items) box.appendChild(makeItem(ref, it));
   col.appendChild(box);
 
@@ -796,6 +817,16 @@ function makeColumn(ref, list){
   plus.onclick = () => openItemModal(ref, null);
   col.appendChild(plus);
 
+  return finishCol(col, ref);
+}
+/* zichtbare items: boodschappen verbergen afgevinkte items zodra je naar een latere dag kijkt */
+function visibleItems(ref){
+  const items = refArr(ref);
+  if(ref.key === listKey("boodschappen") && viewDate > todayStr())
+    return items.filter(it => !it.done);
+  return items;
+}
+function finishCol(col, ref){
   col.addEventListener("dragover", e => { e.preventDefault(); col.classList.add("drag-over"); });
   col.addEventListener("dragleave", () => col.classList.remove("drag-over"));
   col.addEventListener("drop", e => {
@@ -930,7 +961,7 @@ function dateTitleOf(dateStr){
 }
 
 function moveItem(srcRef, dstRef, itemId){
-  if(refKey(srcRef) === refKey(dstRef) && srcRef.date === dstRef.date) return;
+  if(srcRef.date === dstRef.date && srcRef.key === dstRef.key) return;   // zelfde dagdeel op zelfde dag
   const srcArr = refArr(srcRef); if(!srcArr) return;
   const idx = srcArr.findIndex(x => x.id === itemId); if(idx < 0) return;
   const it = srcArr.splice(idx, 1)[0];

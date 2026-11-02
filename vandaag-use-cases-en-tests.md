@@ -1,6 +1,6 @@
 # Vandaag — Use cases & tests
 
-Testdatum: 1 november 2026 · App-versie: **v0.5.6** · Testomgeving: geautomatiseerde logica-tests in Node (DOM-stubs, géén login) + handmatige checklist voor UI/sync.
+Testdatum: 1 november 2026 · App-versie: **v0.5.7** · Testomgeving: geautomatiseerde logica-tests in Node (DOM-stubs, géén login) + handmatige checklist voor UI/sync.
 
 **Kernprincipe: inloggen is altijd optioneel.** De app start altijd lokaal; sync met Google Drive is een uitbreiding die je elk moment kunt hervatten via ☁️ rechtsboven of ☰ → Inloggen.
 
@@ -112,3 +112,17 @@ Handmatig te checken (visueel): groene vinkjes (accent #16a34a), afgevinkte item
 | 50 | Inklap = minnetje | – i.p.v. ⌄, zelfde knopstijl (randje, rechts) | ✅ PASS |
 
 Visueel handmatig: afgevinkte rijen nu nog discreter (hele rij 50% vervaagd, vinkje uitgegrijsd lichtgroen).
+
+## v0.5.7 — use cases (nieuw, automatisch getest)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 51 | Verplaatsen tussen dagdelen (zelfde dag) | BUGFIX: ochtend → middag verplaatst het item echt | ✅ PASS |
+| 52 | Undo dagdeel-verplaatsing | undo zet het item op de oorspronkelijke plek terug | ✅ PASS |
+| 53 | Inklappen behoudt positie | ingeklapte standaardlijst blijft als compacte stub op z'n plek — geen chip-rij meer | ✅ PASS |
+| 54 | Stub openen | ＋ op de stub (of tik op de kop) vouwt de kaart weer uit | ✅ PASS |
+| 55 | Boodschappen op toekomstige dag | afgevinkte items verborgen zodra viewDate > vandaag; data blijft onaangetast | ✅ PASS |
+| 56 | Ochtendicoon ☕ | kop koffie i.p.v. 🌤️ | ✅ PASS |
+| 57 | Reeks zonder lege plekken | eigen lijsten vloeien als masonry (CSS columns, 14px tussenruimte); mobiel 2 kolommen | ✅ PASS (visueel) |
+
+Let op: de chip-rij (#badgesAll) wordt niet meer gerenderd — alle lijsten staan altijd als kaart of stub in het werkblad.
