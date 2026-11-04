@@ -11,14 +11,14 @@
 <link rel="manifest" href="manifest.json" />
 <style>
 :root{
-  --bg:#f4f6fb; --card:#ffffff; --ink:#111827; --muted:#6b7280;
+  --bg:#dbe9ff; --card:#ffffff; --ink:#111827; --muted:#6b7280;
   --accent:#2563eb; --accent-soft:#eff4ff; --line:#e5e7eb;
   --ochtend:#f59e0b; --middag:#10b981; --avond:#6366f1;
   --radius:14px;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;
 }
 *{box-sizing:border-box}
-body{margin:0;background:linear-gradient(180deg,#eaf2ff 0%,#fdf5ec 100%);color:var(--ink);min-height:100vh;overflow-x:hidden}
+body{margin:0;background:linear-gradient(180deg,#cfe3ff 0%,#e4efff 60%,#f6f0ff 100%);color:var(--ink);min-height:100vh;overflow-x:hidden}
 header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);
   border-bottom:1px solid var(--line);padding:10px 8px;
   display:grid;grid-template-columns:48px 1fr 48px;align-items:center}
@@ -56,16 +56,13 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 .grid{display:grid;gap:12px;padding:12px 12px 90px;
   grid-template-columns:repeat(auto-fill,minmax(165px,1fr));max-width:1200px;margin:0 auto;
   touch-action:pan-y}
-/* standaardlijsten (dagdelen + boodschappen): vast 4 naast elkaar, mobiel 2×2 */
-#gridDay{grid-template-columns:repeat(4,minmax(0,1fr));max-width:900px;padding-bottom:0}
-/* eigen lijsten: groepen van max. 5 */
-#gridTopic{display:block;columns:200px 5;column-gap:12px}
-#gridTopic .col{margin-bottom:12px;break-inside:avoid}
+/* 4 vaste banen: standaardlijsten altijd bovenaan één per baan, eigen lijsten vullen de kortste baan */
+#board{display:flex;gap:12px;padding:12px 12px 90px;max-width:1100px;margin:0 auto;
+  align-items:flex-start;touch-action:pan-y}
+.lane{display:flex;flex-direction:column;gap:12px;flex:1;min-width:0}
 @media (max-width:640px){
-  #gridDay{grid-template-columns:repeat(2,minmax(0,1fr))}
-  #gridTopic{columns:2;column-gap:10px}
-  .grid{padding:8px 8px 90px;gap:10px}
-  #gridDay{padding-bottom:0}
+  #board{gap:8px;padding:8px 6px 90px}
+  .lane{gap:8px}
   header{padding:10px 4px}
 }
 .col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -83,17 +80,15 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 .item{display:flex;align-items:center;gap:8px;padding:8px 6px;border-radius:10px;border-bottom:1px solid #f0f0f0;cursor:grab}
 .item:last-child{border-bottom:none}
 .item:hover{background:#fafafa}
-.item.done .txt{color:#9ca3af}
-.item.done{opacity:.5}
-.item.done input[type=checkbox]{accent-color:#a7c9b4}
+.item.done input[type=checkbox]{accent-color:#16a34a}
 .item.lifting{position:fixed;z-index:100;pointer-events:none;background:#fff;
   box-shadow:0 8px 22px rgba(0,0,0,.2);border-radius:10px;padding:8px 12px;font-size:14px;opacity:.95}
 .item.lift-over{background:var(--accent-soft);box-shadow:inset 0 2px 0 var(--accent)}
 .item .txt{flex:1;font-size:14px;word-break:break-word}
 .item input[type=checkbox]{width:18px;height:18px;accent-color:#16a34a;flex:none}
-.item .mv,.item .del{border:none;background:none;cursor:pointer;font-size:15px;color:#c7ccd6;padding:2px 4px;border-radius:6px;flex:none}
-.item:hover .mv,.item:hover .del{color:var(--muted)}
-.item .mv:hover{background:var(--accent-soft);color:var(--accent)}
+.item .mv,.item .del,.item .ed{border:none;background:none;cursor:pointer;font-size:14px;color:#c7ccd6;padding:2px 4px;border-radius:6px;flex:none}
+.item:hover .mv,.item:hover .del,.item:hover .ed{color:var(--muted)}
+.item .mv:hover,.item .ed:hover{background:var(--accent-soft);color:var(--accent)}
 .item .del:hover{background:#fee2e2;color:#dc2626}
 .empty{color:#bbb;font-size:13px;text-align:center;padding:14px 0;font-style:italic}
 menu.move{position:fixed;z-index:50;background:#fff;border:1px solid var(--line);border-radius:12px;
@@ -161,8 +156,7 @@ dialog .inrow .plusbtn:hover{background:var(--accent-soft)}
 </header>
 <div id="syncrow"></div>
 
-<div class="grid" id="gridDay"></div>
-<div class="grid" id="gridTopic" style="padding-top:0"></div>
+<div id="board"></div>
 
 <!-- geminimaliseerde lijsten: als chips bij elkaar, ónder de kaarten -->
 <div class="badges" id="badgesAll"></div>
@@ -255,7 +249,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.5.8";
+const VERSION = "0.5.12";
 
 /* ============================================================
    State & opslag
@@ -651,7 +645,7 @@ function showLog(){
 /* ============================================================
    UI — dagweergave, badges, kolommen
    ============================================================ */
-function render(){ renderGrid(); renderDate(); saveLocal(); }
+function render(){ renderBoard(); renderDate(); saveLocal(); }
 
 function renderDate(){
   const d = new Date(viewDate + "T12:00");
@@ -758,24 +752,41 @@ function deleteTopic(key){
   if(accessToken) api("del", key).catch(()=>{});
 }
 
-function renderGrid(){
-  const gDay = document.getElementById("gridDay");
-  const gTopic = document.getElementById("gridTopic");
-  gDay.innerHTML = ""; gTopic.innerHTML = "";
-  // vaste groep: ochtend, middag, avond + boodschappen — altijd alle vier, ingeklapt = stub op eigen plek
-  for(const d of CONFIG.DAY_PARTS)
-    gDay.appendChild(makeColumn({ date: viewDate, key: d.key },
-      { name: d.name, color: d.color }));
-  for(const st of CONFIG.STANDARD_TOPICS){ const k = listKey(st.id);
-    gDay.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
+function renderGrid(){ renderBoard(); }
+function laneCount(){ return (window.innerWidth || 1024) <= 640 ? 2 : 4; }   // mobiel 2 banen
+function renderBoard(){
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  const NL = laneCount();
+  const lanes = [];
+  for(let i = 0; i < NL; i++){
+    const lane = document.createElement("div");
+    lane.className = "lane";
+    board.appendChild(lane);
+    lanes.push(lane);
   }
-  // eigen lijsten er direct achteraan, als vloeiende reeks (masonry, geen lege plekken)
+  let li = 0;
+  const put = col => { lanes[li % NL].appendChild(col); li++; };
+  // vaste vier: altijd bovenaan, verdeeld over de beschikbare banen
+  for(const d of CONFIG.DAY_PARTS)
+    put(makeColumn({ date: viewDate, key: d.key }, { name: d.name, color: d.color }));
+  for(const st of CONFIG.STANDARD_TOPICS){
+    const k = listKey(st.id);
+    put(makeColumn({ date: null, key: k }, state.lists[k]));
+  }
+  // eigen lijsten: in de kortste baan — lege plek onder een korte vaste lijst vult zich vanzelf
   for(const t of state.topics){
     if(CONFIG.STANDARD_TOPICS.some(s => s.id === t.id)) continue;
-    const k = listKey(t.id);
-    gTopic.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
+    const col = makeColumn({ date: null, key: listKey(t.id) }, state.lists[listKey(t.id)]);
+    let best = 0;
+    for(let i = 1; i < NL; i++) if(laneH(lanes[i]) < laneH(lanes[best])) best = i;
+    lanes[best].appendChild(col);
   }
 }
+function laneH(lane){ return lane.offsetHeight || 0; }
+/* raam van formaat gewisseld (bv. telefoon gedraaid): bord opnieuw verdelen */
+let lastNL = laneCount();
+window.addEventListener("resize", () => { if(laneCount() !== lastNL){ lastNL = laneCount(); render(); } });
 
 function listTitle(ref){
   if(ref.date){
@@ -971,7 +982,14 @@ function makeItem(ref, it){
   el.addEventListener("touchmove", e => moveTouchLift(e), { passive: false });
   el.addEventListener("touchend", e => endTouchLift(e));
   cb.onchange = () => toggleItem(ref, it, cb.checked);
-  txt.onclick = () => openItemModal(ref, it);
+  // potlood = bewerken, prullenbak = verwijderen (tekst zelf doet niets meer)
+  const ed = document.createElement("button"); ed.className = "mv ed"; ed.type = "button";
+  ed.title = "Bewerken"; ed.textContent = "✏️";
+  ed.onclick = (e) => { e.stopPropagation(); openItemModal(ref, it); };
+  const del = document.createElement("button"); del.className = "del"; del.type = "button";
+  del.title = "Verwijderen"; del.textContent = "🗑️";
+  del.onclick = (e) => { e.stopPropagation(); deleteItem(ref, it); };
+  el.append(ed, del);
   return el;
 }
 
@@ -1192,7 +1210,7 @@ document.getElementById("dateBox").onclick = () => { if(viewDate !== todayStr())
 
 /* swipe links/rechts = vorige/volgende dag */
 let swipeX = null, swipeY = null;
-for(const gid of ["gridDay", "gridTopic"]){
+for(const gid of ["board"]){
   const g = document.getElementById(gid);
   g.addEventListener("touchstart", e => {
     swipeX = e.touches[0].clientX; swipeY = e.touches[0].clientY;

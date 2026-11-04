@@ -1,6 +1,6 @@
 # Vandaag — Use cases & tests
 
-Testdatum: 1 november 2026 · App-versie: **v0.5.7** · Testomgeving: geautomatiseerde logica-tests in Node (DOM-stubs, géén login) + handmatige checklist voor UI/sync.
+Testdatum: 1 november 2026 · App-versie: **v0.5.9** · Testomgeving: geautomatiseerde logica-tests in Node (DOM-stubs, géén login) + handmatige checklist voor UI/sync.
 
 **Kernprincipe: inloggen is altijd optioneel.** De app start altijd lokaal; sync met Google Drive is een uitbreiding die je elk moment kunt hervatten via ☁️ rechtsboven of ☰ → Inloggen.
 
@@ -126,3 +126,48 @@ Visueel handmatig: afgevinkte rijen nu nog discreter (hele rij 50% vervaagd, vin
 | 57 | Reeks zonder lege plekken | eigen lijsten vloeien als masonry (CSS columns, 14px tussenruimte); mobiel 2 kolommen | ✅ PASS (visueel) |
 
 Let op: de chip-rij (#badgesAll) wordt niet meer gerenderd — alle lijsten staan altijd als kaart of stub in het werkblad.
+
+## v0.5.8 + v0.5.9 — use cases (automatisch getest, 24/24)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 58 | Volgorde veranderen (slepen) | reorderItem zet item vóór het doelitem; ook naar andere lijst | ✅ PASS |
+| 59 | Undo reorder | undo herstelt de oude volgorde | ✅ PASS |
+| 60 | Cloud-stipje rood | niet ingelogd → rood, titel noemt wachtende wijzigingen | ✅ PASS |
+| 61 | Kaarttint | tint() mengt lijstkleur met wit; ongeldige kleur → wit | ✅ PASS |
+| 62 | Bord met 4 banen | #board = 4 flex-banen; vaste vier staan altijd bovenaan, één per baan | ✅ PASS |
+| 63 | Eigen lijsten vullen gaten | eigen lijsten gaan naar de kortste baan — geen gereserveerde ruimte naast lange boodschappenlijst | ✅ PASS |
+| 64 | Ingeklapte stub op eigen plek | stub blijft in zijn baan | ✅ PASS |
+| 65 | Boodschappen-filter + opschoon | afgevinkt verborgen op toekomstige dagen; oude afgevinkte gewist bij start | ✅ PASS |
+
+Visueel (handmatig): achtergrond nu kleurig blauw-perzikpaarse gradient (geen grijs), overal 12px tussen kaarten (mobiel 8px), 4 kolommen breed op desktop én mobiel.
+## v0.5.10 — use cases (automatisch getest, 12/12)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 66 | Mobiel 2 banen | innerWidth ≤ 640px → laneCount() = 2; vaste vier in 2 rijen van 2 | ✅ PASS |
+| 67 | Desktop 4 banen | breed scherm → 4 banen, vaste vier bovenaan (boodschappen in baan 4) | ✅ PASS |
+| 68 | Resize-herverdeling | wisselt het baanaantal (bijv. draaien iPhone), dan herverdeelt render() het bord | ✅ PASS (logica; visueel handmatig) |
+| 69 | Eigen lijst op mobiel | nieuwe lijst vult de kortste van de 2 banen, direct achter de vaste rijen | ✅ PASS |
+| 70 | Regressie verplaatsen | item van ochtend → middag morgen werkt nog (na baan-refactor) | ✅ PASS |
+| 71 | Regressie reorder/cloud/tint/boodschappen | idem v0.5.9 | ✅ PASS |
+
+Testdatum: 4 november 2026, Node-harness met DOM-stubs, geen login. Handmatig te checken op iPhone: draaien van staand → liggend herverdeelt 2 ↔ 4 banen.
+## v0.5.11 — use cases (automatisch getest, 10/10)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 72 | Potlood rechts van taak | elke taak krijgt ✏️ rechts; tik = bewerkvenster (aanpassen/verplaatsen/verwijderen) | ✅ PASS |
+| 73 | Prullenbak rechts van taak | 🗑️ direct naast ✏️; tik = verwijderen mét undo ("Verwijderd: …") | ✅ PASS |
+| 74 | Tekst klikt niet meer naar editor | op de taaktekst tikken doet niets meer (bewerken alleen via potlood) | ✅ PASS |
+| 75 | Afvinken blijft via checkbox | checkbox links werkt ongewijzigd | ✅ PASS |
+| 76 | Regressie mobiel 2 banen | laneCount nog 2 op mobiel / 4 desktop | ✅ PASS |
+
+Testdatum: 4 november 2026, Node-harness v0.5.11 (opnieuw geschreven na omgeving-reset). Handmatig checken: potlood/prullenbak tikbaar op iPhone (geen hover nodig — knoppen staan altijd, zijn lichtgrijs en kleuren bij tik).
+## v0.5.12 — use cases
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 77 | Afgevinkt niet dimmen | afgevinkte taken blijven volledig zichtbaar (geen grijze tekst, geen 50% transparantie); alleen een fris groen vinkje | ✅ (CSS-only, visueel te checken) |
+
+Afwijking t/m v0.5.11: opacity .5 en grijze tekst voor .done zijn verwijderd; accent-kleur van het vinkje bij done is nu hetzelfde frisse groen (#16a34a) als bij niet-afgevinkt. Afgevinkte items blijven wel onderaan de lijst staan.
