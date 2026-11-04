@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
 <meta name="theme-color" content="#0f172a" />
 <title>Vandaag</title>
 <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192" />
@@ -11,15 +12,23 @@
 <link rel="manifest" href="manifest.json" />
 <style>
 :root{
-  --bg:#dbe9ff; --card:#ffffff; --ink:#111827; --muted:#6b7280;
-  --accent:#2563eb; --accent-soft:#eff4ff; --line:#e5e7eb;
-  --ochtend:#f59e0b; --middag:#10b981; --avond:#6366f1;
-  --radius:14px;
+  --bg:#f4f5f7; --card:#ffffff; --ink:#1f1f24; --muted:#5f6368;
+  --accent:#1a73e8; --accent-soft:#e8f0fe; --line:#e3e5e8; --hover:#f1f3f4;
+  --check:#1e8e3e; --danger:#d93025;
+  --shadow:0 1px 2px rgba(60,64,67,.10),0 2px 6px rgba(60,64,67,.06);
+  --radius:16px;
+  color-scheme:light dark;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;
 }
+@media (prefers-color-scheme:dark){ :root{
+  --bg:#131417; --card:#1e2023; --ink:#e8eaed; --muted:#9aa0a6;
+  --accent:#8ab4f8; --accent-soft:#28324a; --line:#33363b; --hover:#2a2d31;
+  --check:#81c995; --danger:#f28b82;
+  --shadow:none;
+}}
 *{box-sizing:border-box}
-body{margin:0;background:linear-gradient(180deg,#cfe3ff 0%,#e4efff 60%,#f6f0ff 100%);color:var(--ink);min-height:100vh;overflow-x:hidden}
-header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);
+body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+header{position:sticky;top:0;z-index:10;background:var(--bg);
   border-bottom:1px solid var(--line);padding:10px 8px;
   display:grid;grid-template-columns:48px 1fr 48px;align-items:center}
 .headermid{display:flex;align-items:center;justify-content:center;gap:2px;width:100%}
@@ -27,36 +36,24 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 .datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;padding:0 4px}
 .datebox h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.02em;line-height:1.15}
 .datebox .date{color:var(--muted);font-size:12.5px}
-.navbtn{border:none;background:none;cursor:pointer;font-size:26px;color:#374151;
+.navbtn{border:none;background:none;cursor:pointer;font-size:26px;color:var(--ink);
   padding:4px 12px;border-radius:12px;line-height:1;flex:none;font-weight:300}
-.navbtn:hover{background:var(--accent-soft);color:var(--accent)}
-.navbtn:active{background:var(--accent-soft)}
-#syncrow{position:sticky;top:54px;z-index:9;text-align:center;font-size:11px;color:#9ca3af;
+.navbtn:hover{background:var(--hover);color:var(--accent)}
+.navbtn:active{background:var(--hover)}
+#syncrow{position:sticky;top:54px;z-index:9;text-align:center;font-size:11px;color:var(--muted);
   padding:3px 0 0;background:var(--bg);min-height:0}
 #syncrow:not(:empty){min-height:15px}
-.iconbtn{border:none;background:none;cursor:pointer;font-size:20px;color:#4b5563;
+.iconbtn{border:none;background:none;cursor:pointer;font-size:20px;color:var(--muted);
   padding:6px 9px;border-radius:10px;line-height:1;flex:none}
-.iconbtn:hover{background:var(--accent-soft);color:var(--accent)}
+.iconbtn:hover{background:var(--hover);color:var(--accent)}
 .iconbtn:disabled{opacity:.25;cursor:default}
 #syncBtn{position:relative}
 #cloudDot{position:absolute;top:3px;right:2px;width:9px;height:9px;border-radius:50%;
-  background:#dc2626;border:1.5px solid #fff}
-.badge{border:1.5px solid transparent;border-radius:999px;
-  padding:11px 20px;font-size:16px;font-weight:700;cursor:pointer;user-select:none;
-  display:inline-flex;align-items:center;gap:9px;transition:.15s;color:#fff}
-.badge:hover{filter:brightness(1.06)}
-.badge.open{box-shadow:inset 0 0 0 2px rgba(255,255,255,.4)}
-.badge .dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.7}
-.badge .count{font-size:11px;background:rgba(255,255,255,.28);border-radius:999px;padding:1px 7px;color:#fff}
-.badges{display:none;gap:10px;flex-wrap:wrap;padding:2px 16px 70px;align-items:center;justify-content:center}
-.badges:empty{padding:0}
-.badge.ochtend{background:var(--ochtend)}
-.badge.middag{background:var(--middag)}
-.badge.avond{background:var(--avond)}
+  background:var(--danger);border:1.5px solid var(--card)}
 .grid{display:grid;gap:12px;padding:12px 12px 90px;
   grid-template-columns:repeat(auto-fill,minmax(165px,1fr));max-width:1200px;margin:0 auto;
   touch-action:pan-y}
-/* 4 vaste banen: standaardlijsten altijd bovenaan één per baan, eigen lijsten vullen de kortste baan */
+/* vaste banen: standaardlijsten altijd bovenaan één per baan, eigen lijsten vullen de kortste baan */
 #board{display:flex;gap:12px;padding:12px 12px 90px;max-width:1100px;margin:0 auto;
   align-items:flex-start;touch-action:pan-y}
 .lane{display:flex;flex-direction:column;gap:12px;flex:1;min-width:0}
@@ -66,7 +63,7 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
   header{padding:10px 4px}
 }
 .col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column;
+  padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;
   align-self:start}
 .col .listbox{max-height:340px;overflow-y:auto;overscroll-behavior:contain}
 .col.collapsed{min-height:0;padding:8px 10px}
@@ -75,65 +72,74 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop
 .col.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
 .col h2{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
 .col h2 .stripe{flex:1;height:3px;border-radius:2px;background:var(--c,var(--line))}
-.add input{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;background:#fafafa}
-.add input:focus{outline:none;border-color:var(--accent);background:#fff}
-.item{display:flex;align-items:center;gap:8px;padding:8px 6px;border-radius:10px;border-bottom:1px solid #f0f0f0;cursor:grab}
+.add input{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;background:var(--hover);color:var(--ink)}
+.add input:focus{outline:none;border-color:var(--accent);background:var(--card)}
+.item{display:flex;align-items:center;gap:8px;padding:8px 6px;border-radius:10px;border-bottom:1px solid var(--line);cursor:grab}
 .item:last-child{border-bottom:none}
-.item:hover{background:#fafafa}
-.item.done input[type=checkbox]{accent-color:#16a34a}
-.item.lifting{position:fixed;z-index:100;pointer-events:none;background:#fff;
-  box-shadow:0 8px 22px rgba(0,0,0,.2);border-radius:10px;padding:8px 12px;font-size:14px;opacity:.95}
+.item:hover{background:var(--hover)}
+.item.lifting{position:fixed;z-index:100;pointer-events:none;background:var(--card);color:var(--ink);
+  box-shadow:0 8px 22px rgba(0,0,0,.25);border-radius:10px;padding:8px 12px;font-size:14px;opacity:.95}
 .item.lift-over{background:var(--accent-soft);box-shadow:inset 0 2px 0 var(--accent)}
 .item .txt{flex:1;font-size:14px;word-break:break-word}
-.item input[type=checkbox]{width:18px;height:18px;accent-color:#16a34a;flex:none}
-.item .mv,.item .del,.item .ed{border:none;background:none;cursor:pointer;font-size:14px;color:#c7ccd6;padding:2px 4px;border-radius:6px;flex:none}
-.item:hover .mv,.item:hover .del,.item:hover .ed{color:var(--muted)}
-.item .mv:hover,.item .ed:hover{background:var(--accent-soft);color:var(--accent)}
-.item .del:hover{background:#fee2e2;color:#dc2626}
-.empty{color:#bbb;font-size:13px;text-align:center;padding:14px 0;font-style:italic}
-menu.move{position:fixed;z-index:50;background:#fff;border:1px solid var(--line);border-radius:12px;
-  box-shadow:0 8px 30px rgba(0,0,0,.15);padding:6px;min-width:190px;margin:0}
-menu.move button{display:block;width:100%;text-align:left;border:none;background:none;font-size:14px;
-  padding:8px 10px;border-radius:8px;cursor:pointer;font-family:inherit}
-menu.move button:hover{background:var(--accent-soft)}
+.item input[type=checkbox]{width:18px;height:18px;accent-color:var(--check);flex:none}
+/* kleine ronde knoppen met lijn-iconen (Material-stijl) */
+.kbtn{border:none;background:none;cursor:pointer;color:var(--muted);opacity:.6;
+  padding:3px;border-radius:8px;line-height:0;flex:none;display:inline-flex}
+.kbtn svg{width:15px;height:15px;pointer-events:none}
+.kbtn:hover{opacity:1;background:var(--hover);color:var(--accent)}
+.kbtn.danger:hover{background:rgba(217,48,37,.12);color:var(--danger)}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:14px 0;font-style:italic;opacity:.6}
+menu.move{position:fixed;z-index:50;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 8px 30px rgba(0,0,0,.2);padding:6px;min-width:190px;margin:0}
+menu.move button{display:block;width:100%;text-align:left;border:none;background:none;font-size:14px;color:var(--ink);
+  padding:8px 10px;border-radius:10px;cursor:pointer;font-family:inherit}
+menu.move button:hover{background:var(--hover)}
 #status{position:fixed;bottom:16px;left:12px;right:12px;display:flex;gap:8px;justify-content:center;pointer-events:none}
-#status>div{background:#0f172a;color:#fff;font-size:12.5px;padding:7px 14px;border-radius:999px;
-  opacity:0;transition:.3s;display:flex;align-items:center;gap:10px}
+#status>div{background:#202124;color:#fff;font-size:12.5px;padding:7px 14px;border-radius:999px;
+  opacity:0;transition:.3s;display:flex;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 #status>div.show{opacity:.94}
 #status button{border:none;background:rgba(255,255,255,.18);color:#fff;border-radius:999px;
   padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;pointer-events:auto}
-#syncbar{color:#9ca3af;font-size:11px;flex:none}
-.col h2 .min{border:1px solid var(--line);background:#f1f3f7;color:var(--muted);border-radius:8px;
-  width:28px;height:22px;line-height:1;cursor:pointer;font-size:17px;padding:0 0 1px;flex:none;margin-left:auto}
-.col h2 .min:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
-#fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;
-  background:var(--accent);color:#fff;font-size:28px;border:none;line-height:1;z-index:20;
-  box-shadow:0 6px 22px rgba(37,99,235,.45);cursor:pointer}
+#syncbar{color:#9aa0a6;font-size:11px;flex:none}
+/* kop-knoppen: oog (afgevinkt verbergen), inklappen, verwijderen */
+.hbtn{border:none;background:var(--hover);color:var(--muted);border-radius:8px;
+  width:28px;height:22px;line-height:0;cursor:pointer;padding:0;flex:none;
+  display:inline-flex;align-items:center;justify-content:center}
+.hbtn svg{width:14px;height:14px;pointer-events:none}
+.hbtn:hover{background:var(--accent-soft);color:var(--accent)}
+.hbtn.on{background:var(--accent-soft);color:var(--accent)}
+.hbtn.danger:hover{background:rgba(217,48,37,.12);color:var(--danger)}
+#fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:16px;
+  background:var(--accent);color:#fff;border:none;line-height:0;z-index:20;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);cursor:pointer;display:flex;align-items:center;justify-content:center}
+#fab svg{width:24px;height:24px;pointer-events:none}
 #fab:active{transform:scale(.94)}
-dialog{border:none;border-radius:16px;padding:24px;max-width:420px;width:92vw;
-  box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:80vh;display:none;flex-direction:column}
+dialog{border:none;border-radius:16px;padding:24px;max-width:420px;width:92vw;background:var(--card);color:var(--ink);
+  box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:80vh;display:none;flex-direction:column}
 dialog[open]{display:flex}
 dialog::backdrop{background:rgba(15,23,42,.4)}
-dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:14px;margin:6px 0 14px}
-dialog input[type=text]:focus{outline:none;border-color:var(--accent)}
+dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:14px;margin:6px 0 14px;background:var(--hover);color:var(--ink)}
+dialog input[type=text]:focus{outline:none;border-color:var(--accent);background:var(--card)}
 dialog h3{margin:0 0 2px}
 dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
-.btn{border:none;border-radius:12px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;margin:0 4px}
+.btn{border:none;border-radius:12px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;margin:0 4px;font-family:inherit}
 .btn.pri{background:var(--accent);color:#fff}
-.btn.sec{background:#eef0f4;color:var(--ink)}
+.btn.sec{background:var(--hover);color:var(--ink)}
 #menuBox{display:flex;flex-direction:column;gap:8px}
 #menuBox .btn{width:100%;margin:0}
-#menuVer{color:#9ca3af;font-size:11px;text-align:center;margin:6px 0 0}
+#menuVer{color:var(--muted);font-size:11px;text-align:center;margin:6px 0 0}
 #syncrow .sdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .col .plus{position:absolute;right:10px;bottom:10px;border:1.5px solid var(--accent);background:var(--card);color:var(--accent);border-radius:50%;
-  width:26px;height:26px;line-height:1;cursor:pointer;font-size:16px;padding:0;flex:none}
+  width:26px;height:26px;line-height:0;cursor:pointer;padding:0;flex:none;display:flex;align-items:center;justify-content:center}
+.col .plus svg{width:14px;height:14px;pointer-events:none}
 .col .plus:hover{background:var(--accent-soft)}
 .col .addrow{display:flex;gap:8px;align-items:center;margin-top:8px}
 .col .addrow input{flex:1;min-width:0}
 dialog .inrow{display:flex;gap:8px;align-items:center}
 dialog .inrow input{flex:1}
 dialog .inrow .plusbtn{border:1.5px solid var(--accent);background:var(--card);color:var(--accent);border-radius:10px;
-  width:40px;height:40px;font-size:20px;line-height:1;cursor:pointer;flex:none}
+  width:40px;height:40px;font-size:20px;line-height:0;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center}
+dialog .inrow .plusbtn svg{width:18px;height:18px;pointer-events:none}
 dialog .inrow .plusbtn:hover{background:var(--accent-soft)}
 #listdColors{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 #listdColors button{width:30px;height:30px;border-radius:50%;border:2.5px solid transparent;cursor:pointer;padding:0}
@@ -161,7 +167,7 @@ dialog .inrow .plusbtn:hover{background:var(--accent-soft)}
 <!-- geminimaliseerde lijsten: als chips bij elkaar, ónder de kaarten -->
 <div class="badges" id="badgesAll"></div>
 
-<button id="fab" title="Nieuwe lijst">＋</button>
+<button id="fab" title="Nieuwe lijst"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 <div id="status"><div id="toast"></div></div>
 
 <dialog id="login">
@@ -192,7 +198,7 @@ dialog .inrow .plusbtn:hover{background:var(--accent-soft)}
   <h3 id="itemdTitle">Nieuw item</h3>
   <div class="inrow">
     <input type="text" id="itemdInput" />
-    <button class="plusbtn" id="itemdPlus" title="Toevoegen en verder">＋</button>
+    <button class="plusbtn" id="itemdPlus" title="Toevoegen en verder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end">
     <button class="btn sec" id="itemdMove" hidden>⇄ Verplaatsen</button>
@@ -218,6 +224,7 @@ dialog .inrow .plusbtn:hover{background:var(--accent-soft)}
     <button class="btn sec" id="menuAuth">🔑 Inloggen</button>
     <button class="btn sec" id="menuLogout" hidden>🔓 <span id="menuUser"></span> — uitloggen</button>
     <button class="btn sec" id="menuDate">📅 Andere datum…</button>
+    <button class="btn sec" id="menuSync">🔄 Alles synchroniseren</button>
     <button class="btn sec" id="menuLog">📋 Logboek</button>
     <button class="btn pri" id="menuClose">Sluiten</button>
   </div>
@@ -249,7 +256,17 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.5.12";
+const VERSION = "0.6.0";
+
+/* lijn-iconen (Material-achtig, geen emoji) */
+const ICON = {
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+};
 
 /* ============================================================
    State & opslag
@@ -261,6 +278,7 @@ const LS_KEY = "vandaag_state_v1";
 const DAY_KEYS = CONFIG.DAY_PARTS.map(d => d.key);
 let state = { topics: [], lists: {}, days: {} };
 let openLists = new Set([...DAY_KEYS, ...CONFIG.STANDARD_TOPICS.map(t => listKey(t.id))]); // dagdelen + boodschappen standaard open
+let hideDone = {};                        // per lijst (key): afgevinkte items verbergen
 let activeTopic = null;
 let viewDate = null;                      // YYYY-MM-DD die je bekijkt
 let user = null, accessToken = null;
@@ -302,6 +320,7 @@ function loadLocal(){
     const s = JSON.parse(localStorage.getItem(LS_KEY));
     if(s){
       state = { topics: s.topics || [], lists: s.lists || {}, days: s.days || {} };
+      hideDone = s.hideDone || {};
       // geen opgeslagen openLists (oude data): dan de standaard-set incl. boodschappen
       openLists = new Set(s.openLists || [...DAY_KEYS, ...CONFIG.STANDARD_TOPICS.map(t => listKey(t.id))]);
       activeTopic = s.activeTopic || null;
@@ -341,6 +360,7 @@ function loadLocal(){
 }
 function saveLocal(){
   state.openLists = [...openLists]; state.activeTopic = activeTopic;
+  state.hideDone = hideDone;
   state.dirty = [...dirtyKeys];
   localStorage.setItem(LS_KEY, JSON.stringify(state));
 }
@@ -528,13 +548,35 @@ function payloadFor(k){
   const l = state.lists[k] || {};
   return { name: l.name, color: l.color, items: l.items || [], updated: nowISO() };
 }
+/* ---------- outer join: server-items die we lokaal nog niet hebben erbij halen (op item-id) ---------- */
+function unionInto(arr, srvItems){
+  if(!Array.isArray(srvItems)) return 0;
+  const ids = new Set(arr.map(i => i.id));
+  let n = 0;
+  for(const it of srvItems) if(it && it.id && !ids.has(it.id)){ arr.push(it); n++; }
+  return n;
+}
+function mergeSrvIntoLocal(k, srv){
+  if(!srv || !srv.items) return 0;
+  let n = 0;
+  if(k.startsWith("day:")){
+    const d = k.slice(4), day = state.days[d];
+    if(day) for(const key of DAY_KEYS) n += unionInto(day[key] || [], srv.items[key]);
+  } else if(state.lists[k]) n += unionInto(state.lists[k].items || [], srv.items);
+  return n;
+}
 async function pushDirty(){
   if(!accessToken || !dirtyKeys.size) return;
   const keys = [...dirtyKeys];
   try{
+    // eerst server-kopieën ophalen en samenvoegen: nooit iets overschrijven dat
+    // een ander apparaat ondertussen heeft toegevoegd (outer join, niets gaat verloren)
+    let srvFiles = null;
+    try{ srvFiles = (await api("getAll")).files || {}; }catch(e){ srvFiles = null; }
     for(const k of keys){
       if(k.startsWith("day:") && !state.days[k.slice(4)]){ dirtyKeys.delete(k); continue; }
       if(!k.startsWith("day:") && !state.lists[k]){ dirtyKeys.delete(k); continue; }
+      if(srvFiles) mergeSrvIntoLocal(k, srvFiles[k]);
       await api("put", k, payloadFor(k));
       dirtyKeys.delete(k);
       log("Sync-recept: " + k + " → Drive (vanaf " + deviceId() + ")");
@@ -566,8 +608,13 @@ async function pull(force){
         const d = k.slice(4);
         if(dirtyKeys.has(k)) continue;          // eigen werk eerst
         if((srv.updated || "") > ((state.days[d] && state.days[d].updated) || "")){
-          const day = {};
-          for(const key of DAY_KEYS) day[key] = (srv.items && srv.items[key]) || [];
+          // outer join: server-items + eigen items samenvoegen op id — niets gaat verloren
+          const day = state.days[d] || {};
+          for(const key of DAY_KEYS){
+            const merged = ((srv.items && srv.items[key]) || []).slice();
+            unionInto(merged, day[key] || []);
+            day[key] = merged;
+          }
           day.updated = srv.updated;
           state.days[d] = day; changed = true;
         }
@@ -590,6 +637,21 @@ async function pull(force){
     if(changed){ render(); updateSyncBar("gesynchroniseerd"); log("Pull oké: wijzigingen van server overgenomen"); }
   }catch(e){ log("Pull mislukt", e); }
 }
+/* ---------- totaal sync: alles als dirty markeren, outer-join pushen, dan pullen ---------- */
+async function fullSync(){
+  if(!accessToken){ document.getElementById("login").showModal(); return; }
+  toast("Totaal sync — alles samenvoegen met Drive…");
+  for(const d of Object.keys(state.days)) if(state.days[d]) dirtyKeys.add("day:" + d);
+  for(const k of Object.keys(state.lists)) if(state.lists[k]) dirtyKeys.add(k);
+  saveLocal(); updateCloudDot(); updateSyncBar("syncing…");
+  try{
+    await pushDirty();
+    await pull(true);
+    updateSyncBar("gesynchroniseerd");
+    toast("Totaal sync klaar — alle apparaten gelijk");
+  }catch(e){ updateSyncBar("sync mislukt — probeer opnieuw"); }
+}
+
 function updateSyncBar(txt){
   const s = document.getElementById("syncrow");
   if(!s) return;
@@ -810,12 +872,11 @@ function makeColumn(ref, list){
   const col = document.createElement("section");
   col.className = "col" + (collapsed ? " collapsed" : ""); col.dataset.key = key;
   col.dataset.ref = JSON.stringify(ref);   // voor sleepdoelen (touch-reorder)
-  // kleurige kaart: zachte tint van de lijstkleur, rand wat steviger
+  // kleurrijke identiteit zonder pastel-kaart: steelje in de kop krijgt de lijstkleur
   const st = CONFIG.STANDARD_TOPICS.find(s => listKey(s.id) === ref.key);
   const tintc = ref.date ? (CONFIG.DAY_PARTS.find(d => d.key === ref.key) || {}).color
               : ((list && list.color) || (st && st.color) || "#94a3b8");
-  col.style.background = tint(tintc, .10);
-  col.style.borderColor = tint(tintc, .45);
+  col.style.setProperty("--c", tintc);
   const h = document.createElement("h2");
   const t = ref.date ? null : state.topics.find(x => listKey(x.id) === ref.key);
   const icon = ref.date ? CONFIG.DAY_PARTS.find(d => d.key === ref.key).icon : (t && t.icon);
@@ -830,8 +891,9 @@ function makeColumn(ref, list){
       ttl.onclick = () => openListModal(ref.key);
     }
     h.appendChild(ttl);
-    const sp = document.createElement("span"); sp.style.flex = "1"; h.appendChild(sp);
   }
+  // kleursteelje: drager van de lijstkleur (geen pastel-achtergrond meer)
+  const stripe = document.createElement("span"); stripe.className = "stripe"; h.appendChild(stripe);
   if(collapsed){
     // stub: open-teller + tik op de kop = weer openen
     const items0 = visibleItems(ref);
@@ -843,10 +905,29 @@ function makeColumn(ref, list){
     h.onclick = e => { if(e.target === min) return; toggleList(ref.key); };
   }
   const min = document.createElement("button");
-  min.className = "min"; min.textContent = collapsed ? "＋" : "–";
+  min.className = "hbtn min"; min.innerHTML = collapsed ? ICON.plus : ICON.minus;
   min.title = collapsed ? "Openen" : "Inklappen — kaart blijft op z’n plek, alleen kleiner";
   min.onclick = () => toggleList(ref.key);
   h.appendChild(min);
+  // oog: afgevinkte items van déze lijst verbergen (per lijst in te stellen)
+  const eye = document.createElement("button");
+  const hidden = !!hideDone[ref.key];
+  eye.className = "hbtn eye" + (hidden ? " on" : "");
+  eye.innerHTML = hidden ? ICON.eyeOff : ICON.eye;
+  eye.title = hidden ? "Afgevinkte taken verborgen — tik om te tonen" : "Afgevinkte taken verbergen";
+  eye.onclick = () => { hideDone[ref.key] = !hideDone[ref.key]; saveLocal(); render(); };
+  h.appendChild(eye);
+  // prullenbak: eigen lijst verwijderen — alleen mogelijk als de lijst leeg is
+  if(!ref.date && !isStandard){
+    const dl = document.createElement("button");
+    dl.className = "hbtn danger"; dl.innerHTML = ICON.trash;
+    dl.title = "Lijst verwijderen (alleen als de lijst leeg is)";
+    dl.onclick = () => {
+      if(((state.lists[ref.key] || {}).items || []).length){ toast("Lijst is nog niet leeg — eerst taken verwijderen"); return; }
+      deleteTopic(ref.key);
+    };
+    h.appendChild(dl);
+  }
   col.appendChild(h);
 
   if(collapsed) return finishCol(col, ref);
@@ -861,15 +942,16 @@ function makeColumn(ref, list){
 
   // blauwe ＋ rechtsonder in de kaart
   const plus = document.createElement("button");
-  plus.className = "plus"; plus.textContent = "＋"; plus.title = "Nieuw item";
+  plus.className = "plus"; plus.innerHTML = ICON.plus; plus.title = "Nieuw item";
   plus.onclick = () => openItemModal(ref, null);
   col.appendChild(plus);
 
   return finishCol(col, ref);
 }
-/* zichtbare items: boodschappen verbergen afgevinkte items zodra je naar een latere dag kijkt */
+/* zichtbare items: per lijst afgevinkte verbergen; boodschappen verbergt afgevinkte zodra je naar een latere dag kijkt */
 function visibleItems(ref){
   const items = refArr(ref);
+  if(hideDone[ref.key]) return items.filter(it => !it.done);
   if(ref.key === listKey("boodschappen") && viewDate > todayStr())
     return items.filter(it => !it.done);
   return items;
@@ -983,11 +1065,11 @@ function makeItem(ref, it){
   el.addEventListener("touchend", e => endTouchLift(e));
   cb.onchange = () => toggleItem(ref, it, cb.checked);
   // potlood = bewerken, prullenbak = verwijderen (tekst zelf doet niets meer)
-  const ed = document.createElement("button"); ed.className = "mv ed"; ed.type = "button";
-  ed.title = "Bewerken"; ed.textContent = "✏️";
+  const ed = document.createElement("button"); ed.className = "kbtn ed"; ed.type = "button";
+  ed.title = "Bewerken"; ed.innerHTML = ICON.edit;
   ed.onclick = (e) => { e.stopPropagation(); openItemModal(ref, it); };
-  const del = document.createElement("button"); del.className = "del"; del.type = "button";
-  del.title = "Verwijderen"; del.textContent = "🗑️";
+  const del = document.createElement("button"); del.className = "kbtn del danger"; del.type = "button";
+  del.title = "Verwijderen"; del.innerHTML = ICON.trash;
   del.onclick = (e) => { e.stopPropagation(); deleteItem(ref, it); };
   el.append(ed, del);
   return el;
@@ -1125,6 +1207,7 @@ document.getElementById("menuDate").onclick = () => {
   goTo(d);
 };
 document.getElementById("menuLog").onclick = () => { document.getElementById("menu").close(); showLog(); };
+document.getElementById("menuSync").onclick = () => { document.getElementById("menu").close(); fullSync(); };
 document.getElementById("menuVer").textContent = "v" + VERSION + (user ? " · " + user : "");
 document.getElementById("logClose").onclick = () => document.getElementById("logd").close();
 document.getElementById("logClear").onclick = () => { state.log = []; showLog(); };
@@ -1134,7 +1217,7 @@ document.getElementById("loginNo").onclick = () => {
   toast("Lokaal — sync later via ☁️ rechtsboven of ☰ → Inloggen");
 };
 document.getElementById("syncBtn").onclick = () => {
-  if(accessToken){ pushDirty(); pull(true); toast("Sync nu…"); }
+  if(accessToken) fullSync();
   else document.getElementById("login").showModal();
 };
 document.getElementById("fab").onclick = addTopic;

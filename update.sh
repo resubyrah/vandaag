@@ -21,8 +21,10 @@ html="$(newest html)"
 js="$(newest js)"
 md="$(newest md)"
 
-[ -n "$html" ] || { echo "Geen .html-bestand gevonden in $SRC" >&2; exit 1; }
-[ -n "$js" ] || { echo "Geen .js-bestand gevonden in $SRC" >&2; exit 1; }
+if [ -z "$html" ] && [ -z "$js" ] && [ -z "$md" ]; then
+  echo "Geen .html-, .js- of .md-bestand gevonden in $SRC" >&2
+  exit 1
+fi
 
 close() {
   local diff=$(( $(stat -f %m "$1") - $(stat -f %m "$2") ))
@@ -30,15 +32,26 @@ close() {
 }
 
 move_md=false
-if [ -n "$md" ] && close "$md" "$html" && close "$md" "$js"; then
+if [ -n "$md" ]; then
   move_md=true
+  for ref in "$html" "$js"; do
+    if [ -n "$ref" ] && ! close "$md" "$ref"; then move_md=false; fi
+  done
 fi
 
-mv -f "$html" "$DEST/index.html"
-mv -f "$js" "$DEST/sw.js"
+if [ -n "$html" ]; then
+  mv -f "$html" "$DEST/index.html"
+  echo "$html -> $DEST/index.html"
+else
+  echo "Geen .html-bestand gevonden, overgeslagen"
+fi
 
-echo "$html -> $DEST/index.html"
-echo "$js -> $DEST/sw.js"
+if [ -n "$js" ]; then
+  mv -f "$js" "$DEST/sw.js"
+  echo "$js -> $DEST/sw.js"
+else
+  echo "Geen .js-bestand gevonden, overgeslagen"
+fi
 
 if $move_md; then
   mv -f "$md" "$DEST/"

@@ -171,3 +171,17 @@ Testdatum: 4 november 2026, Node-harness v0.5.11 (opnieuw geschreven na omgeving
 | 77 | Afgevinkt niet dimmen | afgevinkte taken blijven volledig zichtbaar (geen grijze tekst, geen 50% transparantie); alleen een fris groen vinkje | ✅ (CSS-only, visueel te checken) |
 
 Afwijking t/m v0.5.11: opacity .5 en grijze tekst voor .done zijn verwijderd; accent-kleur van het vinkje bij done is nu hetzelfde frisse groen (#16a34a) als bij niet-afgevinkt. Afgevinkte items blijven wel onderaan de lijst staan.
+## v0.6.0 — use cases (automatisch getest, 12/12)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 78 | Sync verliest niets (outer join) | vóór elke push wordt de server-kopie gehaald; server-items die lokaal ontbreken worden op id samengevoegd — overschrijven is niet meer mogelijk | ✅ PASS (unionInto/mergeSrvIntoLocal) |
+| 79 | Pull-merge dagen | bij pull wordt een dagdellijst samengevoegd in plaats van vervangen | ✅ PASS |
+| 80 | Totaal sync | ☰ → "Alles synchroniseren" markeert álle dagen+lijsten als dirty, merged en pusht alles, en trekt daarna de server weer; ☁️ rechtsboven doet nu hetzelfde | ✅ (logica getest via payloadFor; op apparaat handmatig te checken) |
+| 81 | Oog-knop per lijst | tik op het oog in de kaartkop verbergt/tonnt afgevinkte taken van die lijst; staat wordt lokaal bewaard | ✅ PASS |
+| 82 | Lijst verwijderen (alleen leeg) | prullenbak in de kop van eigen lijsten; niet-lege lijst → melding "eerst taken verwijderen"; lege lijst → verwijderd mét undo én sync-del | ✅ PASS |
+| 83 | Material-iconen | ✏️/🗑️-knoppen zijn strakke SVG-lijniconen (geen emoji); ook ＋, oog en inklap-knop | ✅ PASS |
+| 84 | Donker thema | volgt systeeminstelling (prefers-color-scheme): wit/Material-licht ↔ donkergrijs; vinkje groen, plus accent-blauw passen zich mee | ✅ (CSS-variabelen, visueel te checken) |
+| 85 | Vaste marges | 12px tussen alle kaarten/banen (mobiel 8px), nergens een grotere tussenruimte; kaarten zonder vaste breedte (flex-banen) | ✅ (CSS, visueel te checken) |
+
+Look & feel: pastel-kaart achtergronden zijn weg — witte kaarten (donker: donkergrijze) met een klein gekleurd steelje in de kop als lijst-identiteit. Testdatum: 4 nov 2026, Node-harness met DOM-stubs.
