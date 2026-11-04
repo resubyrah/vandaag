@@ -64,7 +64,7 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 }
 .col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;
-  align-self:stretch;flex:1;min-width:0}
+  align-self:start;flex:0 1 auto;min-width:0}
 .col.collapsed{flex:0 0 auto}
 .col .listbox{max-height:340px;overflow-y:auto;overscroll-behavior:contain;flex:1}
 .col.collapsed{min-height:0;padding:8px 10px}
@@ -115,6 +115,13 @@ menu.move button:hover{background:var(--hover)}
   box-shadow:0 6px 20px rgba(0,0,0,.28);cursor:pointer;display:flex;align-items:center;justify-content:center}
 #fab svg{width:24px;height:24px;pointer-events:none}
 #fab:active{transform:scale(.94)}
+/* permanente undo-knop, links naast de lijst-toevoegen knop */
+#undoBtn{position:fixed;right:84px;bottom:26px;border:1px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:999px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;z-index:20;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);display:none;align-items:center;gap:6px;max-width:60vw;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;font-family:inherit}
+#undoBtn.show{display:flex}
+#undoBtn:active{transform:scale(.96)}
 dialog{border:none;border-radius:16px;padding:24px;max-width:420px;width:92vw;background:var(--card);color:var(--ink);
   box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:80vh;display:none;flex-direction:column}
 dialog[open]{display:flex}
@@ -170,6 +177,7 @@ dialog .inrow .plusbtn:hover{filter:brightness(1.1)}
 <!-- geminimaliseerde lijsten: als chips bij elkaar, ónder de kaarten -->
 <div class="badges" id="badgesAll"></div>
 
+<button id="undoBtn" title="Laatste actie ongedaan maken">↩ Ongedaan</button>
 <button id="fab" title="Nieuwe lijst"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 <div id="status"><div id="toast"></div></div>
 
@@ -259,7 +267,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.6.2";
+const VERSION = "0.6.3";
 
 /* lijn-iconen (Material-achtig, geen emoji) */
 const ICON = {
@@ -282,6 +290,7 @@ const DAY_KEYS = CONFIG.DAY_PARTS.map(d => d.key);
 let state = { topics: [], lists: {}, days: {} };
 let openLists = new Set([...DAY_KEYS, ...CONFIG.STANDARD_TOPICS.map(t => listKey(t.id))]); // dagdelen + boodschappen standaard open
 let hideDone = {};                        // per lijst (key): afgevinkte items verbergen
+let tomb = {};                           // tombstones: per key de lokaal verwijderde item-ids (komen niet terug via merge)
 let activeTopic = null;
 let viewDate = null;                      // YYYY-MM-DD die je bekijkt
 let user = null, accessToken = null;
@@ -324,6 +333,7 @@ function loadLocal(){
     if(s){
       state = { topics: s.topics || [], lists: s.lists || {}, days: s.days || {} };
       hideDone = s.hideDone || {};
+      tomb = s.tomb || {};
       // geen opgeslagen openLists (oude data): dan de standaard-set incl. boodschappen
       openLists = new Set(s.openLists || [...DAY_KEYS, ...CONFIG.STANDARD_TOPICS.map(t => listKey(t.id))]);
       activeTopic = s.activeTopic || null;
@@ -364,6 +374,7 @@ function loadLocal(){
 function saveLocal(){
   state.openLists = [...openLists]; state.activeTopic = activeTopic;
   state.hideDone = hideDone;
+  state.tomb = tomb;
   state.dirty = [...dirtyKeys];
   localStorage.setItem(LS_KEY, JSON.stringify(state));
 }
@@ -372,20 +383,31 @@ function saveLocal(){
    Undo — elke mutatie zet een tegenzet op de stapel
    ============================================================ */
 const undoStack = [];
+function markTomb(key, id){ (tomb[key] = tomb[key] || {})[id] = nowISO(); }
+function unmarkTomb(key, id){ if(tomb[key]){ delete tomb[key][id]; } }
+function updateUndoBtn(){
+  const b = document.getElementById("undoBtn");
+  if(!b) return;
+  const u = undoStack[undoStack.length - 1];
+  if(!u){ b.classList.remove("show"); return; }
+  b.textContent = "↩ " + (u.label ? u.label : "Ongedaan");
+  b.classList.add("show");
+}
 function offerUndo(label){
-  const t = document.getElementById("toast");
-  const btn = document.createElement("button"); btn.textContent = "↩ Ongedaan";
-  btn.onclick = () => { doUndo(); };
-  toast(label, btn);
+  // label op de laatste undo-stapelzet zetten (knop toont wat er teruggedraaid wordt)
+  const u = undoStack[undoStack.length - 1];
+  if(u) u.label = label;
+  updateUndoBtn();
+  toast(label);
 }
 function doUndo(){
   const u = undoStack.pop();
   if(!u){ toast("Niets meer terug te draaien"); return; }
   u.fn();
   (u.keys || []).forEach(k => markDirty(k));
-  render(); saveLocal();
+  render(); saveLocal(); updateUndoBtn();
 }
-function pushUndo(fn, keys){ undoStack.push({ fn, keys: keys || [] }); if(undoStack.length > 20) undoStack.shift(); }
+function pushUndo(fn, keys){ undoStack.push({ fn, keys: keys || [] }); if(undoStack.length > 20){ undoStack.shift(); } }
 
 /* ============================================================
    Google login — Google Identity Services (oauth token)
@@ -551,21 +573,23 @@ function payloadFor(k){
   const l = state.lists[k] || {};
   return { name: l.name, color: l.color, items: l.items || [], updated: nowISO() };
 }
-/* ---------- outer join: server-items die we lokaal nog niet hebben erbij halen (op item-id) ---------- */
-function unionInto(arr, srvItems){
+/* ---------- outer join: server-items die we lokaal nog niet hebben erbij halen (op item-id).
+   Tombstones: lokaal verwijderde ids worden NIET teruggezet (daarom kwamen verwijderde items terug) ---------- */
+function unionInto(arr, srvItems, gone){
   if(!Array.isArray(srvItems)) return 0;
   const ids = new Set(arr.map(i => i.id));
   let n = 0;
-  for(const it of srvItems) if(it && it.id && !ids.has(it.id)){ arr.push(it); n++; }
+  for(const it of srvItems) if(it && it.id && !ids.has(it.id) && !(gone && gone[it.id])){ arr.push(it); n++; }
   return n;
 }
 function mergeSrvIntoLocal(k, srv){
   if(!srv || !srv.items) return 0;
   let n = 0;
+  const gone = tomb[k];
   if(k.startsWith("day:")){
     const d = k.slice(4), day = state.days[d];
-    if(day) for(const key of DAY_KEYS) n += unionInto(day[key] || [], srv.items[key]);
-  } else if(state.lists[k]) n += unionInto(state.lists[k].items || [], srv.items);
+    if(day) for(const key of DAY_KEYS) n += unionInto(day[key] || [], srv.items[key], gone);
+  } else if(state.lists[k]) n += unionInto(state.lists[k].items || [], srv.items, gone);
   return n;
 }
 async function pushDirty(){
@@ -582,6 +606,7 @@ async function pushDirty(){
       if(srvFiles) mergeSrvIntoLocal(k, srvFiles[k]);
       await api("put", k, payloadFor(k));
       dirtyKeys.delete(k);
+      delete tomb[k];                    // server heeft nu ónze versie: tombstones voor deze key zijn niet meer nodig
       log("Sync-recept: " + k + " → Drive (vanaf " + deviceId() + ")");
     }
     log("Push oké: " + keys.length + " key(s) naar Drive");
@@ -615,7 +640,7 @@ async function pull(force){
           const day = state.days[d] || {};
           for(const key of DAY_KEYS){
             const merged = ((srv.items && srv.items[key]) || []).slice();
-            unionInto(merged, day[key] || []);
+            unionInto(merged, day[key] || [], tomb[k]);
             day[key] = merged;
           }
           day.updated = srv.updated;
@@ -1032,7 +1057,11 @@ function deleteItem(ref, it){
   const items = refArr(ref);
   const idx = items.findIndex(x => x.id === it.id);
   items.splice(idx, 1);
-  pushUndo(() => { refArr(ref).splice(Math.min(idx, refArr(ref).length), 0, it); saveLocal(); }, [refKey(ref)]);
+  markTomb(refKey(ref), it.id);
+  pushUndo(() => {
+    unmarkTomb(refKey(ref), it.id);
+    refArr(ref).splice(Math.min(idx, refArr(ref).length), 0, it); saveLocal();
+  }, [refKey(ref)]);
   render(); markDirty(refKey(ref));
   offerUndo("Verwijderd: " + (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text));
 }
@@ -1091,8 +1120,10 @@ function reorderItem(srcRef, dstRef, itemId, beforeId){
     else if(di > idx) di -= 1;           // eigen splice schuift de index op
   }
   const it = srcArr.splice(idx, 1)[0];
+  if(!sameList) markTomb(refKey(srcRef), it.id);   // anders zet de merge hem op de oude plek terug
   if(di < 0 || di >= dstArr.length) dstArr.push(it); else dstArr.splice(di, 0, it);
   pushUndo(() => {
+    if(!sameList) unmarkTomb(refKey(srcRef), it.id);
     const a = refArr(dstRef); const i = a.findIndex(x => x.id === itemId); if(i >= 0) a.splice(i, 1);
     refArr(srcRef).splice(Math.min(idx, refArr(srcRef).length), 0, it);
     saveLocal();
@@ -1180,8 +1211,10 @@ function moveItem(srcRef, dstRef, itemId){
   const srcArr = refArr(srcRef); if(!srcArr) return;
   const idx = srcArr.findIndex(x => x.id === itemId); if(idx < 0) return;
   const it = srcArr.splice(idx, 1)[0];
+  markTomb(refKey(srcRef), it.id);
   refArr(dstRef).push(it);
   pushUndo(() => {
+    unmarkTomb(refKey(srcRef), it.id);
     const a = refArr(dstRef); const i = a.findIndex(x => x.id === itemId); if(i>=0) a.splice(i,1);
     refArr(srcRef).splice(Math.min(idx, refArr(srcRef).length), 0, it);
     saveLocal();
@@ -1224,6 +1257,7 @@ document.getElementById("syncBtn").onclick = () => {
   else document.getElementById("login").showModal();
 };
 document.getElementById("fab").onclick = addTopic;
+document.getElementById("undoBtn").onclick = doUndo;
 document.getElementById("newlistOk").onclick = confirmAddTopic;
 document.getElementById("newlistName").onkeydown = e => { if(e.key === "Enter") confirmAddTopic(); };
 document.getElementById("itemdOk").onclick = itemdSave;
@@ -1317,10 +1351,14 @@ function cleanupBoodschappen(){
   const l = state.lists[k];
   if(!l || !l.items) return 0;
   const today = todayStr();
-  const before = l.items.length;
-  l.items = l.items.filter(it => !it.done || !it.doneAt || it.doneAt.slice(0,10) >= today);
-  const removed = before - l.items.length;
+  const keep = [];
+  for(const it of l.items){
+    if(!it.done || !it.doneAt || it.doneAt.slice(0,10) >= today) keep.push(it);
+    else markTomb(k, it.id);          /* gewist: niet door een merge laten terugkomen */
+  }
+  const removed = l.items.length - keep.length;
   if(removed){
+    l.items = keep;
     saveLocal(); markDirty(k);
     log("Boodschappen: " + removed + " afgevinkt item(s) van eerdere dagen gewist");
   }

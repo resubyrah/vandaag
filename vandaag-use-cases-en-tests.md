@@ -204,3 +204,14 @@ Testdatum: 4 november 2026, Node-harness met DOM-stubs.
 | 92 | Plusknop overlapt niets | ＋ staat niet meer zwevend rechts-onder (over de potlood/prullenbak-knoppen van de laatste taak), maar als vaste rij onder de lijst, rechts uitgelijnd | ✅ PASS |
 
 Fix: .col .plus is geen position:absolute meer — normale flex-rij onder de listbox (margin-top 8px). Testdatum: 4 november 2026.
+## v0.6.3 — use cases (automatisch getest, 12/12)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 93 | Kaarten natuurlijke hoogte | lijsten zijn niet langer dan nodig (geen rek tot maximale hoogte meer); eigen lijsten verdelen zich over alle kolommen via kortste-baan | ✅ PASS (CSS) |
+| 94 | Verwijderde items komen niet terug | lokaal verwijderde/verplaatste items krijgen een tombstone en worden door sync-merge NIET meer teruggezet; na een geslaagde push vervalt de tombstone | ✅ PASS |
+| 95 | Verplaatst item blijft op nieuwe plek | ook bij verplaatsen naar ander dagdeel: merge zet hem niet op de oude plek terug | ✅ PASS |
+| 96 | Permanente undo-knop | "↩ Ongedaan" staat altijd in beeld (links naast de ＋-knop) zodra er iets terug te draaien is, toont de laatste actie en draait die terug; geen verdwijn-timer meer | ✅ PASS |
+| 97 | Undo herstelt ook sync | na undo van een verwijdering wordt de tombstone gewist, zodat het herstelde item gewoon meesynct | ✅ PASS |
+
+Oorzaak "verwijderde items komen terug": de outer-join-merge zette elk server-item dat lokaal ontbrak terug — inclusief net verwijderde. Nu filteren tombstones (per sync-key bewaard in state.tomb) die ids weg. Testdatum: 4 november 2026, Node-harness met DOM-stubs.
