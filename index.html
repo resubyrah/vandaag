@@ -64,10 +64,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 }
 .col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;
-  align-self:start;flex:0 1 auto;min-width:0}
-.col.collapsed{flex:0 0 auto}
+  align-self:stretch;flex:0 1 auto;min-width:0}
 .col .listbox{max-height:340px;overflow-y:auto;overscroll-behavior:contain;flex:1}
-.col.collapsed{min-height:0;padding:8px 10px}
+.col.collapsed{min-height:0;padding:8px 10px;flex:0 0 auto}
 .col.collapsed .listbox,.col.collapsed .plus{display:none}
 .col.collapsed h2{margin:0;cursor:pointer}
 .col.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
@@ -151,6 +150,9 @@ dialog .inrow .plusbtn{border:none;background:var(--accent);color:#fff;border-ra
   box-shadow:0 2px 8px rgba(0,0,0,.22)}
 dialog .inrow .plusbtn svg{width:18px;height:18px;pointer-events:none}
 dialog .inrow .plusbtn:hover{filter:brightness(1.1)}
+/* logboek: breder zodat lange logregels op één regel passen */
+dialog#logd{max-width:min(94vw,780px)}
+#logd #logBox{white-space:pre;overflow-x:auto}
 #listdColors{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 #listdColors button{width:30px;height:30px;border-radius:50%;border:2.5px solid transparent;cursor:pointer;padding:0}
 #listdColors button.sel{border-color:var(--ink)}
@@ -192,7 +194,7 @@ dialog .inrow .plusbtn:hover{filter:brightness(1.1)}
   <h3>📋 Logboek</h3>
   <p>Nieuwste eerst. Fouten staan ook in de browserconsole (F12 → Console).</p>
   <div id="logBox" style="max-height:50vh;overflow:auto;background:#0f172a;color:#e2e8f0;
-    border-radius:10px;padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap"></div>
+    border-radius:10px;padding:10px;font:11px/1.5 ui-monospace,monospace"></div>
   <div style="margin-top:14px">
     <button class="btn sec" id="logClear">Wis logboek</button>
     <button class="btn pri" id="logClose">Sluiten</button>
@@ -267,7 +269,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.6.3";
+const VERSION = "0.6.5";
 
 /* lijn-iconen (Material-achtig, geen emoji) */
 const ICON = {
@@ -275,8 +277,9 @@ const ICON = {
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
   eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
   eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>',
-  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>',
-  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+  chevDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  chevUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>',
 };
 
 /* ============================================================
@@ -873,7 +876,13 @@ function renderBoard(){
     lanes[best].appendChild(col);
   }
 }
-function laneH(lane){ return lane.offsetHeight || 0; }
+/* hoogte van een baan = som van de kaarten erin (de baan zelf staat op stretch,
+   dus offsetHeight van de baan is bij elke baan gelijk — dat verpestte de verdeling) */
+function laneH(lane){
+  let h = 0;
+  for(const c of lane.children) h += c.offsetHeight || 0;
+  return h;
+}
 /* raam van formaat gewisseld (bv. telefoon gedraaid): bord opnieuw verdelen */
 let lastNL = laneCount();
 window.addEventListener("resize", () => { if(laneCount() !== lastNL){ lastNL = laneCount(); render(); } });
@@ -933,8 +942,8 @@ function makeColumn(ref, list){
     h.onclick = e => { if(e.target === min) return; toggleList(ref.key); };
   }
   const min = document.createElement("button");
-  min.className = "hbtn min"; min.innerHTML = collapsed ? ICON.plus : ICON.minus;
-  min.title = collapsed ? "Openen" : "Inklappen — kaart blijft op z’n plek, alleen kleiner";
+  min.className = "hbtn min"; min.innerHTML = collapsed ? ICON.chevDown : ICON.chevUp;
+  min.title = collapsed ? "Uitklappen" : "Inklappen — kaart blijft op z’n plek, alleen kleiner";
   min.onclick = () => toggleList(ref.key);
   h.appendChild(min);
   // oog: afgevinkte items van déze lijst verbergen (per lijst in te stellen)
@@ -945,16 +954,16 @@ function makeColumn(ref, list){
   eye.title = hidden ? "Afgevinkte taken verborgen — tik om te tonen" : "Afgevinkte taken verbergen";
   eye.onclick = () => { hideDone[ref.key] = !hideDone[ref.key]; saveLocal(); render(); };
   h.appendChild(eye);
-  // prullenbak: eigen lijst verwijderen — alleen mogelijk als de lijst leeg is
+  // prullenbak: eigen lijst verwijderen — knop staat er alléén als de lijst leeg is
   if(!ref.date && !isStandard){
-    const dl = document.createElement("button");
-    dl.className = "hbtn danger"; dl.innerHTML = ICON.trash;
-    dl.title = "Lijst verwijderen (alleen als de lijst leeg is)";
-    dl.onclick = () => {
-      if(((state.lists[ref.key] || {}).items || []).length){ toast("Lijst is nog niet leeg — eerst taken verwijderen"); return; }
-      deleteTopic(ref.key);
-    };
-    h.appendChild(dl);
+    const items = (state.lists[ref.key] || {}).items || [];
+    if(items.length === 0){
+      const dl = document.createElement("button");
+      dl.className = "hbtn danger"; dl.innerHTML = ICON.trash;
+      dl.title = "Lijst verwijderen (lege lijst)";
+      dl.onclick = () => deleteTopic(ref.key);
+      h.appendChild(dl);
+    }
   }
   col.appendChild(h);
 

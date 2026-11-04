@@ -215,3 +215,21 @@ Fix: .col .plus is geen position:absolute meer — normale flex-rij onder de lis
 | 97 | Undo herstelt ook sync | na undo van een verwijdering wordt de tombstone gewist, zodat het herstelde item gewoon meesynct | ✅ PASS |
 
 Oorzaak "verwijderde items komen terug": de outer-join-merge zette elk server-item dat lokaal ontbrak terug — inclusief net verwijderde. Nu filteren tombstones (per sync-key bewaard in state.tomb) die ids weg. Testdatum: 4 november 2026, Node-harness met DOM-stubs.
+## v0.6.4 — use cases (automatisch getest, 15/15)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 98 | Inklap-knop = chevron | open kaart: chevron-omhoog (inklappen); stub: chevron-omlaag (uitklappen) — geen verwarrende +/− meer | ✅ PASS |
+| 99 | Eigen lijsten verdeeld | laneH telt nu de som van de kaarthoogtes per baan (niet meer de baan-hoogte, die was door stretch overal gelijk) → eigen lijsten gaan weer naar de laagste baan | ✅ PASS |
+| 100 | Alle lijsten even breed | kaart strekt over de volle baanbreedte, hoogte volgt de inhoud | ✅ PASS (CSS) |
+| 101 | Prullenbak alleen bij lege lijst | delete-icoon op een eigen lijst staat er alléén als de lijst 0 taken heeft | ✅ PASS |
+| 102 | Regressie v0.6.3 | delta-sync, reparatie-sync, tombstones, permanente undo, oog-knop | ✅ PASS |
+
+Testdatum: 4 november 2026, Node-harness met DOM-stubs.
+## v0.6.5 — use case
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 103 | Logboek breder | het logboek-venster is breder (max. 94vw/780px) en logregels blijven op één regel (horizontaal scrollbaar i.p.v. afgebroken) | ✅ (CSS, visueel te checken) |
+
+Testdatum: 4 november 2026.
