@@ -55,8 +55,8 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
   touch-action:pan-y}
 /* vaste banen: standaardlijsten altijd bovenaan één per baan, eigen lijsten vullen de kortste baan */
 #board{display:flex;gap:12px;padding:12px 12px 90px;max-width:1100px;margin:0 auto;
-  align-items:flex-start;touch-action:pan-y}
-.lane{display:flex;flex-direction:column;gap:12px;flex:1;min-width:0}
+  align-items:stretch;touch-action:pan-y}
+.lane{display:flex;flex-direction:column;gap:12px;flex:1;min-width:0;align-items:stretch}
 @media (max-width:640px){
   #board{gap:8px;padding:8px 6px 90px}
   .lane{gap:8px}
@@ -64,8 +64,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 }
 .col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;
-  align-self:start}
-.col .listbox{max-height:340px;overflow-y:auto;overscroll-behavior:contain}
+  align-self:stretch;flex:1;min-width:0}
+.col.collapsed{flex:0 0 auto}
+.col .listbox{max-height:340px;overflow-y:auto;overscroll-behavior:contain;flex:1}
 .col.collapsed{min-height:0;padding:8px 10px}
 .col.collapsed .listbox,.col.collapsed .plus{display:none}
 .col.collapsed h2{margin:0;cursor:pointer}
@@ -129,18 +130,20 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 #menuBox .btn{width:100%;margin:0}
 #menuVer{color:var(--muted);font-size:11px;text-align:center;margin:6px 0 0}
 #syncrow .sdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.col .plus{position:absolute;right:10px;bottom:10px;border:1.5px solid var(--accent);background:var(--card);color:var(--accent);border-radius:50%;
-  width:26px;height:26px;line-height:0;cursor:pointer;padding:0;flex:none;display:flex;align-items:center;justify-content:center}
-.col .plus svg{width:14px;height:14px;pointer-events:none}
-.col .plus:hover{background:var(--accent-soft)}
+.col .plus{border:none;background:var(--accent);color:#fff;border-radius:50%;
+  width:28px;height:28px;line-height:0;cursor:pointer;padding:0;flex:none;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.22);margin-top:8px;align-self:flex-end}
+.col .plus svg{width:15px;height:15px;pointer-events:none}
+.col .plus:hover{filter:brightness(1.1)}
 .col .addrow{display:flex;gap:8px;align-items:center;margin-top:8px}
 .col .addrow input{flex:1;min-width:0}
 dialog .inrow{display:flex;gap:8px;align-items:center}
 dialog .inrow input{flex:1}
-dialog .inrow .plusbtn{border:1.5px solid var(--accent);background:var(--card);color:var(--accent);border-radius:10px;
-  width:40px;height:40px;font-size:20px;line-height:0;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center}
+dialog .inrow .plusbtn{border:none;background:var(--accent);color:#fff;border-radius:50%;
+  width:40px;height:40px;line-height:0;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.22)}
 dialog .inrow .plusbtn svg{width:18px;height:18px;pointer-events:none}
-dialog .inrow .plusbtn:hover{background:var(--accent-soft)}
+dialog .inrow .plusbtn:hover{filter:brightness(1.1)}
 #listdColors{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 #listdColors button{width:30px;height:30px;border-radius:50%;border:2.5px solid transparent;cursor:pointer;padding:0}
 #listdColors button.sel{border-color:var(--ink)}
@@ -224,7 +227,7 @@ dialog .inrow .plusbtn:hover{background:var(--accent-soft)}
     <button class="btn sec" id="menuAuth">🔑 Inloggen</button>
     <button class="btn sec" id="menuLogout" hidden>🔓 <span id="menuUser"></span> — uitloggen</button>
     <button class="btn sec" id="menuDate">📅 Andere datum…</button>
-    <button class="btn sec" id="menuSync">🔄 Alles synchroniseren</button>
+    <button class="btn sec" id="menuSync">🔄 Alles synchroniseren (reparatie)</button>
     <button class="btn sec" id="menuLog">📋 Logboek</button>
     <button class="btn pri" id="menuClose">Sluiten</button>
   </div>
@@ -256,7 +259,7 @@ const CONFIG = {
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.6.0";
+const VERSION = "0.6.2";
 
 /* lijn-iconen (Material-achtig, geen emoji) */
 const ICON = {
@@ -1217,7 +1220,7 @@ document.getElementById("loginNo").onclick = () => {
   toast("Lokaal — sync later via ☁️ rechtsboven of ☰ → Inloggen");
 };
 document.getElementById("syncBtn").onclick = () => {
-  if(accessToken) fullSync();
+  if(accessToken){ pushDirty(); pull(true); toast("Sync nu…"); }
   else document.getElementById("login").showModal();
 };
 document.getElementById("fab").onclick = addTopic;

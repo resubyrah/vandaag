@@ -185,3 +185,22 @@ Afwijking t/m v0.5.11: opacity .5 en grijze tekst voor .done zijn verwijderd; ac
 | 85 | Vaste marges | 12px tussen alle kaarten/banen (mobiel 8px), nergens een grotere tussenruimte; kaarten zonder vaste breedte (flex-banen) | ✅ (CSS, visueel te checken) |
 
 Look & feel: pastel-kaart achtergronden zijn weg — witte kaarten (donker: donkergrijze) met een klein gekleurd steelje in de kop als lijst-identiteit. Testdatum: 4 nov 2026, Node-harness met DOM-stubs.
+## v0.6.1 — use cases (automatisch getest, 12/12)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 86 | Wolkje = delta-sync | ☁️ rechtsboven pusht alleen de gewijzigde keys en trekt dan; géén volledige sync meer | ✅ PASS |
+| 87 | Totaal sync = reparatie | alleen via ☰ → "Alles synchroniseren (reparatie)" bij device-verschillen | ✅ PASS |
+| 88 | Kolommen oprekken | kaarten vullen de baan: tussen blokken nooit meer dan de standaardmarge (12px / mobiel 8px); ingeklapte stubs blijven compact | ✅ PASS (CSS, visueel te checken) |
+| 89 | Mobiel centraal | 2 gelijke banen vullen de breedte → alles centrail uitgelijnd | ✅ (visueel te checken) |
+| 90 | Plusknop gevuld | ＋ is nu een gevulde accent-cirkel (Material-stijl), ook in het dialoog | ✅ PASS |
+| 91 | Regressie v0.6.0 | SVG-iconen, oog-knop, outer join, dag-merge, lijst verwijderen | ✅ PASS |
+
+Testdatum: 4 november 2026, Node-harness met DOM-stubs.
+## v0.6.2 — use case (automatisch getest, 4/4)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 92 | Plusknop overlapt niets | ＋ staat niet meer zwevend rechts-onder (over de potlood/prullenbak-knoppen van de laatste taak), maar als vaste rij onder de lijst, rechts uitgelijnd | ✅ PASS |
+
+Fix: .col .plus is geen position:absolute meer — normale flex-rij onder de listbox (margin-top 8px). Testdatum: 4 november 2026.
