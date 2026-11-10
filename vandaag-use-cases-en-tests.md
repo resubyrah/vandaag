@@ -233,3 +233,37 @@ Testdatum: 4 november 2026, Node-harness met DOM-stubs.
 | 103 | Logboek breder | het logboek-venster is breder (max. 94vw/780px) en logregels blijven op één regel (horizontaal scrollbaar i.p.v. afgebroken) | ✅ (CSS, visueel te checken) |
 
 Testdatum: 4 november 2026.
+## v0.6.6 — use cases (automatisch getest, 17/17)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 104 | Afvinken synct | unionInto voegt nu óók velden samen: item bestaat aan beide kanten → done/doneAt met de nieuwste doneAt wint | ✅ PASS |
+| 105 | Afvink-uit doneAt | toggleItem zet altijd doneAt (ook bij uitvinken), zodat "nieuwste wint"-merge werkt | ✅ PASS |
+| 106 | Verwijderen synct | applyGone past srv.gone lokaal toe én markeert in tomb (doorgeven); pull-merge dagen én topics | ✅ PASS |
+| 107 | gone in payload | payloadFor stuurt tomb-ids als gone, dag én topic; tomb blijft na put (alleen trimTomb ruimt >14 dagen) | ✅ PASS |
+| 108 | trimTomb | tombstones ouder dan 14 dagen worden gewist, recente blijven | ✅ PASS |
+| 109 | Device in log | elke logregel: datum tijd ␣␣ device ␣␣ tekst | ✅ PASS |
+| 110 | Apparaatnaam-menu | menu → 💻 Apparaatnaam… (dialoog, geen browser prompt()); custom naam in localStorage "vandaag_devname" | ✅ PASS |
+| 111 | Log-datum stripping | regels van vandaag tonen alleen tijd+device; oudere regels behouden datum | ✅ PASS |
+| 112 | Context in log | "Toegevoegd/Afgevinkt/Verwijderd: <item>"; sync-receptregel toont eerste itemteksten (itemSummary, max 60 tekens) | ✅ PASS |
+| 113 | F12-hint Mac | log-dialoog: "F12 → Console; Mac: ⌘⌥J" | ✅ (tekst) |
+
+Testdatum: 10 november 2026, Node-harness met DOM-stubs (17 PASS).
+## v0.6.7 — use case: thema via menu (27/27 incl. regressie)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 114 | Thema via menu | ☰ → 🎨 Thema doorloopt automatisch → donker → licht → automatisch; keuze bewaard in localStorage "vandaag_theme" | ✅ PASS |
+| 115 | Donker forceren | donker = html.force-dark met donkere variabelen; licht = html.force-light (blokkeert de systeem-media-query) | ✅ PASS |
+| 116 | Menuknop-label | knop toont huidige modus ("Thema: automatisch/donker/licht") | ✅ PASS |
+| 117 | Regressie v0.6.6 | doneAt-merge, gone-propagatie, payload gone, log/device, apparaatnaam | ✅ PASS |
+
+Testdatum: 10 november 2026, Node-harness met DOM-stubs (27 PASS).
+## v0.6.8 — use case: wisknop logboek verwijderd (28/28)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 118 | Logboek niet wisbaar | "Wis logboek"-knop is weg uit de log-dialoog (alleen Sluiten); geen logClear-handler; log vervalt vanzelf na 100 regels | ✅ PASS |
+| 119 | Regressie v0.6.6/0.6.7 | sync-fixes, log/device, thema-menu | ✅ PASS |
+
+Testdatum: 10 november 2026, Node-harness met DOM-stubs (28 PASS).

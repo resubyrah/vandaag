@@ -20,12 +20,20 @@
   color-scheme:light dark;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;
 }
-@media (prefers-color-scheme:dark){ :root{
+@media (prefers-color-scheme:dark){ :root:not(.force-light){
   --bg:#131417; --card:#1e2023; --ink:#e8eaed; --muted:#9aa0a6;
   --accent:#8ab4f8; --accent-soft:#28324a; --line:#33363b; --hover:#2a2d31;
   --check:#81c995; --danger:#f28b82;
   --shadow:none;
 }}
+/* handmatige donkere modus (menu → thema), los van de systeeminstelling */
+html.force-dark{
+  --bg:#131417; --card:#1e2023; --ink:#e8eaed; --muted:#9aa0a6;
+  --accent:#8ab4f8; --accent-soft:#28324a; --line:#33363b; --hover:#2a2d31;
+  --check:#81c995; --danger:#f28b82;
+  --shadow:none;
+  color-scheme:dark;
+}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
 header{position:sticky;top:0;z-index:10;background:var(--bg);
@@ -192,11 +200,10 @@ dialog#logd{max-width:min(94vw,780px)}
 
 <dialog id="logd">
   <h3>📋 Logboek</h3>
-  <p>Nieuwste eerst. Fouten staan ook in de browserconsole (F12 → Console).</p>
+  <p>Nieuwste eerst. Fouten staan ook in de browserconsole (F12 → Console; Mac: ⌘⌥J).</p>
   <div id="logBox" style="max-height:50vh;overflow:auto;background:#0f172a;color:#e2e8f0;
     border-radius:10px;padding:10px;font:11px/1.5 ui-monospace,monospace"></div>
   <div style="margin-top:14px">
-    <button class="btn sec" id="logClear">Wis logboek</button>
     <button class="btn pri" id="logClose">Sluiten</button>
   </div>
 </dialog>
@@ -205,6 +212,14 @@ dialog#logd{max-width:min(94vw,780px)}
   <h3>Nieuwe lijst</h3>
   <input type="text" id="newlistName" />
   <button class="btn pri" id="newlistOk" style="width:100%;margin:0">Toevoegen</button>
+</dialog>
+
+<dialog id="devd">
+  <h3>💻 Apparaatnaam</h3>
+  <p style="margin:0 0 8px;font-size:12px;opacity:.7">Wordt in het logboek bij elke regel getoond, zodat je ziet welk apparaat de actie deed.</p>
+  <input type="text" id="devName" placeholder="bijv. Mac thuis" />
+  <button class="btn pri" id="devOk" style="width:100%;margin:8px 0 0">Opslaan</button>
+  <button class="btn sec" id="devReset" style="width:100%;margin:8px 0 0">Terug naar standaard</button>
 </dialog>
 
 <dialog id="itemd">
@@ -238,6 +253,8 @@ dialog#logd{max-width:min(94vw,780px)}
     <button class="btn sec" id="menuLogout" hidden>🔓 <span id="menuUser"></span> — uitloggen</button>
     <button class="btn sec" id="menuDate">📅 Andere datum…</button>
     <button class="btn sec" id="menuSync">🔄 Alles synchroniseren (reparatie)</button>
+    <button class="btn sec" id="menuDev">💻 Apparaatnaam…</button>
+    <button class="btn sec" id="menuTheme">🎨 Thema</button>
     <button class="btn sec" id="menuLog">📋 Logboek</button>
     <button class="btn pri" id="menuClose">Sluiten</button>
   </div>
@@ -266,10 +283,41 @@ const CONFIG = {
   TOPIC_COLORS: ["#ef4444","#f97316","#22c55e","#0ea5e9","#6366f1","#a855f7","#ec4899","#84cc16"]
 };
 
+/* ============================================================
+   Thema — auto (systeem), donker of licht (menu → 🎨 Thema)
+   ============================================================ */
+function getTheme(){
+  let t = null;
+  try{ t = localStorage.getItem("vandaag_theme"); }catch(e){}
+  return (t === "dark" || t === "light") ? t : "auto";
+}
+function applyTheme(){
+  const t = getTheme();
+  const root = document.documentElement;
+  root.classList.toggle("force-dark", t === "dark");
+  root.classList.toggle("force-light", t === "light");
+  const b = document.getElementById("menuTheme");
+  if(b) b.textContent = "🎨 Thema: " + (t === "dark" ? "donker" : t === "light" ? "licht" : "automatisch");
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute("content", t === "light" ? "#f4f5f7" : t === "dark" ? "#131417"
+    : (window.matchMedia && window.matchMedia("(prefers-color-scheme:dark)").matches ? "#131417" : "#f4f5f7"));
+}
+function cycleTheme(){
+  const order = ["auto", "dark", "light"];
+  const next = order[(order.indexOf(getTheme()) + 1) % order.length];
+  try{ localStorage.setItem("vandaag_theme", next); }catch(e){}
+  applyTheme();
+  toast("Thema: " + (next === "dark" ? "donker" : next === "light" ? "licht" : "automatisch (systeem)"));
+}
+applyTheme();
+if(window.matchMedia) try{
+  window.matchMedia("(prefers-color-scheme:dark)").addEventListener("change", () => { if(getTheme() === "auto") applyTheme(); });
+}catch(e){}
+
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.6.5";
+const VERSION = "0.6.8";
 
 /* lijn-iconen (Material-achtig, geen emoji) */
 const ICON = {
@@ -522,8 +570,13 @@ function updateCloudDot(){
 /* ============================================================
    Backend — Google Apps Script, per sync-key één JSON in Drive
    ============================================================ */
-/* ---------- apparaatnaam: voor de sync-recepten (per browser éénmalig) ---------- */
+/* ---------- apparaatnaam: voor de sync-recepten (per browser éénmalig).
+   Eigen naam mogelijk (menu → Apparaatnaam); anders soort toestel + 3 willekeurige
+   letters (om meerdere exemplaren uit elkaar te houden, bijv. Mac·2sa). ---------- */
 function deviceId(){
+  let custom = null;
+  try{ custom = localStorage.getItem("vandaag_devname"); }catch(e){}
+  if(custom) return custom;
   let id = null;
   try{ id = localStorage.getItem("vandaag_dev"); }catch(e){}
   if(!id){
@@ -534,6 +587,19 @@ function deviceId(){
     try{ localStorage.setItem("vandaag_dev", id); }catch(e){}
   }
   return id;
+}
+/* eerste paar itemteksten van een sync-key — als context bij de sync-recept-regel */
+function itemSummary(k){
+  let texts = [];
+  if(k.startsWith("day:")){
+    const d = k.slice(4), day = state.days[d] || {};
+    for(const key of DAY_KEYS) for(const it of (day[key] || [])) if(texts.length < 3) texts.push(it.text || it.value || "?");
+  } else {
+    for(const it of ((state.lists[k] || {}).items || [])) if(texts.length < 3) texts.push(it.text || it.value || "?");
+  }
+  if(!texts.length) return "(leeg)";
+  let s = texts.join(", ");
+  return s.length > 60 ? s.slice(0,60) + "…" : s;
 }
 
 async function api(action, key, data){
@@ -571,19 +637,48 @@ function payloadFor(k){
     const d = k.slice(4);
     const items = {};
     for(const key of DAY_KEYS) items[key] = (state.days[d] && state.days[d][key]) || [];
-    return { name:"Dag " + d, date:d, items, updated: nowISO() };
+    return { name:"Dag " + d, date:d, items, gone: tomb[k] ? Object.keys(tomb[k]) : [], updated: nowISO() };
   }
   const l = state.lists[k] || {};
-  return { name: l.name, color: l.color, items: l.items || [], updated: nowISO() };
+  return { name: l.name, color: l.color, items: l.items || [], gone: tomb[k] ? Object.keys(tomb[k]) : [], updated: nowISO() };
 }
 /* ---------- outer join: server-items die we lokaal nog niet hebben erbij halen (op item-id).
-   Tombstones: lokaal verwijderde ids worden NIET teruggezet (daarom kwamen verwijderde items terug) ---------- */
+   Tombstones: lokaal verwijderde ids worden NIET teruggezet.
+   Bestaande items: de nieuwste afvink-status (doneAt) wint — anders raakt afvinken
+   op het ene apparaat onzichtbaar voor het andere. ---------- */
 function unionInto(arr, srvItems, gone){
   if(!Array.isArray(srvItems)) return 0;
-  const ids = new Set(arr.map(i => i.id));
+  const byId = new Map(arr.map(i => [i.id, i]));
   let n = 0;
-  for(const it of srvItems) if(it && it.id && !ids.has(it.id) && !(gone && gone[it.id])){ arr.push(it); n++; }
+  for(const it of srvItems){
+    if(!it || !it.id || (gone && gone[it.id])) continue;
+    const loc = byId.get(it.id);
+    if(!loc){ arr.push(it); n++; continue; }
+    // item bestaat aan beide kanten: afvink-status met de nieuwste doneAt wint
+    const s = String(it.doneAt || "0"), l = String(loc.doneAt || "0");
+    if(s > l){ loc.done = it.done; loc.doneAt = it.doneAt; n++; }
+  }
   return n;
+}
+/* server-verwijderingen toepassen (srv.gone) en onthouden zodat ze zelf weer doorgegeven worden */
+function applyGone(k, arr, gone){
+  if(!Array.isArray(gone) || !gone.length) return 0;
+  const g = new Set(gone);
+  let n = 0;
+  for(const it of arr.slice()) if(g.has(it.id)){
+    arr.splice(arr.findIndex(x => x.id === it.id), 1); n++;
+    markTomb(k, it.id);
+  }
+  return n;
+}
+/* tombstones opruimen: ouder dan 14 dagen gaat weg (houdt de gone-lijst klein) */
+function trimTomb(k){
+  const t = tomb[k]; if(!t) return;
+  const cut = new Date(addDays(todayStr(), -14) + "T00:00").getTime();
+  for(const id of Object.keys(t)){
+    if(new Date(t[id]).getTime() < cut) delete t[id];
+  }
+  if(!Object.keys(t).length) delete tomb[k];
 }
 function mergeSrvIntoLocal(k, srv){
   if(!srv || !srv.items) return 0;
@@ -591,8 +686,16 @@ function mergeSrvIntoLocal(k, srv){
   const gone = tomb[k];
   if(k.startsWith("day:")){
     const d = k.slice(4), day = state.days[d];
-    if(day) for(const key of DAY_KEYS) n += unionInto(day[key] || [], srv.items[key], gone);
-  } else if(state.lists[k]) n += unionInto(state.lists[k].items || [], srv.items, gone);
+    if(day){
+      for(const key of DAY_KEYS){
+        n += unionInto(day[key] || [], srv.items[key], gone);
+        n += applyGone(k, day[key] || [], srv.gone);
+      }
+    }
+  } else if(state.lists[k]){
+    n += unionInto(state.lists[k].items || [], srv.items, gone);
+    n += applyGone(k, state.lists[k].items || [], srv.gone);
+  }
   return n;
 }
 async function pushDirty(){
@@ -609,8 +712,8 @@ async function pushDirty(){
       if(srvFiles) mergeSrvIntoLocal(k, srvFiles[k]);
       await api("put", k, payloadFor(k));
       dirtyKeys.delete(k);
-      delete tomb[k];                    // server heeft nu ónze versie: tombstones voor deze key zijn niet meer nodig
-      log("Sync-recept: " + k + " → Drive (vanaf " + deviceId() + ")");
+      trimTomb(k);                         // server heeft nu ónze versie; tombstones mogen niet weg (moeten doorgegeven worden), alleen de oude opruimen
+      log("Sync-recept: " + k + " → Drive · " + itemSummary(k));
     }
     log("Push oké: " + keys.length + " key(s) naar Drive");
     updateSyncBar("gesynchroniseerd");
@@ -644,6 +747,7 @@ async function pull(force){
           for(const key of DAY_KEYS){
             const merged = ((srv.items && srv.items[key]) || []).slice();
             unionInto(merged, day[key] || [], tomb[k]);
+            applyGone(k, merged, srv.gone);
             day[key] = merged;
           }
           day.updated = srv.updated;
@@ -657,10 +761,13 @@ async function pull(force){
           if(!state.topics.some(t => listKey(t.id) === k))
             state.topics.push({ id: k.slice(6), name: srv.name || k.slice(6) });
         } else if(!dirtyKeys.has(k) && (srv.updated || "") > (state.lists[k].updated || "")){
-          // samenvoegen op item-id: items die alleen op de server bestaan erbij halen
+          // samenvoegen op item-id: nieuwe server-items erbij, afvink-status met
+          // nieuwste doneAt laten winnen, server-verwijderingen (gone) toepassen
           const local = state.lists[k].items || [];
-          const ids = new Set(local.map(i => i.id));
-          for(const it of (srv.items || [])) if(!ids.has(it.id)) local.push(it);
+          unionInto(local, srv.items || [], tomb[k]);
+          applyGone(k, local, srv.gone);
+          if(srv.name) state.lists[k].name = srv.name;
+          if(srv.color) state.lists[k].color = srv.color;
           state.lists[k].updated = srv.updated; changed = true;
         }
       }
@@ -703,7 +810,8 @@ let lastSyncTime = "";
    Logging — console + in-app logboek (menu → 📋 Logboek)
    ============================================================ */
 function log(msg, err){
-  const line = todayStr() + " " + new Date().toTimeString().slice(0,5) + "  " + msg
+  const line = todayStr() + " " + new Date().toTimeString().slice(0,5)
+    + "  " + deviceId() + "  " + msg
     + (err ? "  ⚠ " + (err && err.message ? err.message : JSON.stringify(err)) : "");
   state.log = state.log || [];
   state.log.push(line);
@@ -721,17 +829,22 @@ function toast(msg, actionEl){
 }
 function showLog(){
   const box = document.getElementById("logBox");
-  let txt = (state.log || []).slice().reverse().join("\n") || "(leeg logboek)";
+  const today = todayStr() + " ";
+  const txt = (state.log || []).slice().reverse().map(line =>
+    // regels van vandaag: datum weglaten, alleen tijd + device; oudere regels datum laten staan
+    line.startsWith(today) ? line.slice(today.length) : line
+  ).join("\n") || "(leeg logboek)";
   const audit = (state.audit || []).slice().reverse().slice(0, 30);
+  let out = txt;
   if(audit.length){
-    txt += "\n\n── sync-recepten (Drive, per apparaat) ──\n";
-    txt += audit.map(a => {
+    out += "\n\n── sync-recepten (Drive, per apparaat) ──\n";
+    out += audit.map(a => {
       const d = new Date(a.t);
       return d.toLocaleDateString("nl-NL") + " " + d.toTimeString().slice(0,5)
         + "  " + a.key + "  ← " + (a.device || "?");
     }).join("\n");
   }
-  box.textContent = txt;
+  box.textContent = out;
   document.getElementById("logd").showModal();
 }
 
@@ -1060,7 +1173,7 @@ function addItem(ref, value){
   items.push(it);
   pushUndo(() => { refArr(ref).splice(refArr(ref).findIndex(x => x.id === it.id), 1); saveLocal(); }, [refKey(ref)]);
   render(); markDirty(refKey(ref));
-  offerUndo("Toegevoegd");
+  offerUndo("Toegevoegd: " + (v.length > 24 ? v.slice(0,24) + "…" : v));
 }
 function deleteItem(ref, it){
   const items = refArr(ref);
@@ -1076,10 +1189,12 @@ function deleteItem(ref, it){
 }
 function toggleItem(ref, it, done){
   const old = { done: it.done, doneAt: it.doneAt };
-  it.done = done; it.doneAt = done ? nowISO() : null;
+  it.done = done;
+  it.doneAt = nowISO();   // óók bij afvinken-uit: de nieuwste doneAt wint bij samenvoegen met andere apparaten
   pushUndo(() => { it.done = old.done; it.doneAt = old.doneAt; saveLocal(); }, [refKey(ref)]);
   render(); markDirty(refKey(ref));
-  if(done) offerUndo("Afgevinkt"); 
+  const label = (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text);
+  offerUndo(done ? "Afgevinkt: " + label : "Afvink-uit: " + label);
 }
 function editText(ref, it){ openItemModal(ref, it); }
 
@@ -1252,10 +1367,27 @@ document.getElementById("menuDate").onclick = () => {
   goTo(d);
 };
 document.getElementById("menuLog").onclick = () => { document.getElementById("menu").close(); showLog(); };
+/* apparaatnaam: eigen naam voor in het logboek (geen browser prompt()) */
+document.getElementById("menuDev").onclick = () => {
+  document.getElementById("menu").close();
+  document.getElementById("devName").value = deviceId();
+  document.getElementById("devd").showModal();
+};
+document.getElementById("menuTheme").onclick = () => cycleTheme();
+document.getElementById("devOk").onclick = () => {
+  const v = document.getElementById("devName").value.trim();
+  if(v){ try{ localStorage.setItem("vandaag_devname", v); }catch(e){} }
+  document.getElementById("devd").close();
+  toast("Apparaatnaam: " + deviceId());
+};
+document.getElementById("devReset").onclick = () => {
+  try{ localStorage.removeItem("vandaag_devname"); }catch(e){}
+  document.getElementById("devName").value = deviceId();
+  toast("Apparaatnaam terug op standaard: " + deviceId());
+};
 document.getElementById("menuSync").onclick = () => { document.getElementById("menu").close(); fullSync(); };
 document.getElementById("menuVer").textContent = "v" + VERSION + (user ? " · " + user : "");
 document.getElementById("logClose").onclick = () => document.getElementById("logd").close();
-document.getElementById("logClear").onclick = () => { state.log = []; showLog(); };
 document.getElementById("loginGo").onclick = () => { document.getElementById("login").close(); loginFlow(); };
 document.getElementById("loginNo").onclick = () => {
   document.getElementById("login").close();
