@@ -267,3 +267,16 @@ Testdatum: 10 november 2026, Node-harness met DOM-stubs (27 PASS).
 | 119 | Regressie v0.6.6/0.6.7 | sync-fixes, log/device, thema-menu | ✅ PASS |
 
 Testdatum: 10 november 2026, Node-harness met DOM-stubs (28 PASS).
+## v0.6.9 — use cases: sync-bug minuutresolutie + centraal Drive-logboek (47/47)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 120 | Afvinken binnen dezelfde minuut | nu de een de versie van de ander heeft gepulled, weigerde de merge-gate een nieuwe push binnen dezelfde minuut (minuut-resolutie) — nowISO heeft nu seconde+ms-resolutie, dus een latere push is altijd strikter nieuwer | ✅ PASS |
+| 121 | Oude data compatibel | minuut-resolutie doneAt/updated van vóór v0.6.9 sorteren gewoon vóór de nieuwe ms-timestamps | ✅ PASS |
+| 122 | Centraal logboek in Drive | elke actie (Toegevoegd/Afgevinkt/Verwijderd: item) komt in log.json in Drive (max 500), op elk apparaat zichtbaar bovenaan het logboek met device en tijd | ✅ PASS |
+| 123 | Offline-wachtrij | centrale regels wachten in state.clog (max 50) en gaan pas na een geslaagde put weg — bij sync-falen blijven ze bewaard | ✅ PASS |
+| 124 | Log overleeft herstart | lokaal logboek, audit, clog en dlog worden via state bewaard en hersteld bij laden | ✅ PASS |
+| 125 | Eigen push = geen zinloze pull-merge | na een geslaagde put wordt de lokale updated gelijkgetrokken aan de serverversie | ✅ PASS |
+| 126 | Regressie | doneAt-merge, gone-propagatie, thema, apparaatnaam, geen wisknop | ✅ PASS |
+
+Testdatum: 10 november 2026, Node-harness met DOM-stubs (47 PASS).

@@ -317,7 +317,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.6.8";
+const VERSION = "0.6.9";
 
 /* lijn-iconen (Material-achtig, geen emoji) */
 const ICON = {
@@ -361,7 +361,11 @@ function addDays(dateStr, n){
 function nowISO(){
   // ECHTE datum-tijd, nooit de bekeken dag: sync-timestamps met een toekomstige
   // datum maken de server onbedoeld "altijd nieuwer" → sync-data op andere apparaten.
-  return todayStr() + "T" + new Date().toTimeString().slice(0,5);
+  // Resolutie tot op de milliseconde: met alleen uren:minuten bleek de merge op
+  // andere apparaten te weigeren ("nieuwer dan" is dan vals als beide in
+  // dezelfde minuut changeden) — juist bij snel achter elkaar afvinken/verwijderen.
+  return todayStr() + "T" + new Date().toTimeString().slice(0,8)
+    + "." + String(Date.now() % 1000).padStart(3,"0");
 }
 
 function dayItems(date, key){
@@ -383,6 +387,10 @@ function loadLocal(){
     const s = JSON.parse(localStorage.getItem(LS_KEY));
     if(s){
       state = { topics: s.topics || [], lists: s.lists || {}, days: s.days || {} };
+      state.log = s.log || [];                 // logboek overleeft herstart
+      state.audit = s.audit || [];             // sync-recepten (Drive) laatst gezien
+      state.clog = s.clog || [];               // centrale log-regels die nog niet naar Drive zijn
+      state.dlog = s.dlog || [];               // centrale log-regels zoals laatst opgehaald
       hideDone = s.hideDone || {};
       tomb = s.tomb || {};
       // geen opgeslagen openLists (oude data): dan de standaard-set incl. boodschappen
@@ -444,12 +452,21 @@ function updateUndoBtn(){
   b.textContent = "↩ " + (u.label ? u.label : "Ongedaan");
   b.classList.add("show");
 }
+/* centraal logboek: acties die bij de volgende push naar Drive gaan, zodat
+   ze op álle apparaten in het logboek verschijnen (volgorde van gebeuren) */
+function clog(msg){
+  state.clog = state.clog || [];
+  state.clog.push({ t: new Date().toISOString(), device: deviceId(), msg: msg });
+  if(state.clog.length > 50) state.clog.shift();
+  saveLocal();
+}
 function offerUndo(label){
   // label op de laatste undo-stapelzet zetten (knop toont wat er teruggedraaid wordt)
   const u = undoStack[undoStack.length - 1];
   if(u) u.label = label;
   updateUndoBtn();
   toast(label);
+  clog(label);                  // ook centraal: op elk apparaat zichtbaar wat hier gebeurde
 }
 function doUndo(){
   const u = undoStack.pop();
@@ -602,11 +619,12 @@ function itemSummary(k){
   return s.length > 60 ? s.slice(0,60) + "…" : s;
 }
 
-async function api(action, key, data){
+async function api(action, key, data, logEntries){
   const res = await fetch(CONFIG.SCRIPT_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action, key, data, token: accessToken, device: deviceId() })
+    body: JSON.stringify({ action, key, data, token: accessToken, device: deviceId(),
+      log: (logEntries && logEntries.length) ? logEntries : undefined })
   });
   if(!res.ok) throw new Error("HTTP " + res.status);
   const r = await res.json();
@@ -706,12 +724,23 @@ async function pushDirty(){
     // een ander apparaat ondertussen heeft toegevoegd (outer join, niets gaat verloren)
     let srvFiles = null;
     try{ srvFiles = (await api("getAll")).files || {}; }catch(e){ srvFiles = null; }
+    let flushed = false;
     for(const k of keys){
       if(k.startsWith("day:") && !state.days[k.slice(4)]){ dirtyKeys.delete(k); continue; }
       if(!k.startsWith("day:") && !state.lists[k]){ dirtyKeys.delete(k); continue; }
       if(srvFiles) mergeSrvIntoLocal(k, srvFiles[k]);
-      await api("put", k, payloadFor(k));
+      const p = payloadFor(k);
+      // centrale log-regels (clog) meesturen met de eerste put van deze cyclus;
+      // pas na geslaagde put uit de wachtrij — bij mislukking blijven ze bewaard
+      const pending = flushed ? [] : (state.clog || []).slice(0, 50);
+      await api("put", k, p, pending);
+      if(pending.length) state.clog = (state.clog || []).filter(e => pending.indexOf(e) === -1);
+      flushed = flushed || pending.length > 0;
       dirtyKeys.delete(k);
+      // lokale updated gelijktrekken aan wat de server nu heeft: voorkomt een
+      // zinloze eigen merge bij de volgende pull
+      if(k.startsWith("day:")){ if(state.days[k.slice(4)]) state.days[k.slice(4)].updated = p.updated; }
+      else if(state.lists[k]) state.lists[k].updated = p.updated;
       trimTomb(k);                         // server heeft nu ónze versie; tombstones mogen niet weg (moeten doorgegeven worden), alleen de oude opruimen
       log("Sync-recept: " + k + " → Drive · " + itemSummary(k));
     }
@@ -734,6 +763,7 @@ async function pull(force){
     const r = await api("getAll");
     const files = r.files || {};
     if(files.audit && files.audit.entries) state.audit = files.audit.entries;   // sync-recepten bewaren
+    if(files.log && Array.isArray(files.log.entries)) state.dlog = files.log.entries;   // centraal logboek
     let changed = false;
     for(const k of Object.keys(files)){
       const srv = files[k];
@@ -830,14 +860,24 @@ function toast(msg, actionEl){
 function showLog(){
   const box = document.getElementById("logBox");
   const today = todayStr() + " ";
-  const txt = (state.log || []).slice().reverse().map(line =>
+  const localTxt = (state.log || []).slice().reverse().map(line =>
     // regels van vandaag: datum weglaten, alleen tijd + device; oudere regels datum laten staan
     line.startsWith(today) ? line.slice(today.length) : line
   ).join("\n") || "(leeg logboek)";
+  // centraal logboek eerst: alle apparaten, chronologisch wat er gebeurd is
+  const dlog = (state.dlog || []).slice().reverse().map(e => {
+    const d = new Date(e.t);
+    const dt = d.toLocaleDateString("nl-NL", { day:"numeric", month:"short" });
+    return (todayStr() === d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0") ? "" : dt + " ")
+      + d.toLocaleTimeString("nl-NL", { hour:"2-digit", minute:"2-digit" })
+      + "  " + (e.device || "?") + "  " + (e.msg || "");
+  }).join("\n");
+  let out = "";
+  if(dlog) out += "── centraal logboek (Drive, alle apparaten) ──\n" + dlog + "\n\n";
+  out += "── dit apparaat ──\n" + localTxt;
   const audit = (state.audit || []).slice().reverse().slice(0, 30);
-  let out = txt;
   if(audit.length){
-    out += "\n\n── sync-recepten (Drive, per apparaat) ──\n";
+    out += "\n\n── sync-recepten (per put) ──\n";
     out += audit.map(a => {
       const d = new Date(a.t);
       return d.toLocaleDateString("nl-NL") + " " + d.toTimeString().slice(0,5)
