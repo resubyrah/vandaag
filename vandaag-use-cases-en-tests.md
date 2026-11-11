@@ -280,3 +280,27 @@ Testdatum: 10 november 2026, Node-harness met DOM-stubs (28 PASS).
 | 126 | Regressie | doneAt-merge, gone-propagatie, thema, apparaatnaam, geen wisknop | ✅ PASS |
 
 Testdatum: 10 november 2026, Node-harness met DOM-stubs (47 PASS).
+## v0.7.0 — use cases: lijst-sync, verwijderkruis, header, drag-hint, tekst-sync (52/52)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 127 | Verwijderde lijst synct | deleteTopic zet een stempel in meta.json (Drive); andere apparaten ruimen de lijst bij de eerstvolgende pull op — óók bij reparatie-sync (fullSync pust meta mee) | ✅ PASS |
+| 128 | Lijst-undo | undo van lijst-verwijderen haalt de meta-markering weg én herstelt de lijst | ✅ PASS (undo-fn) |
+| 129 | Drag-hint weg | na een drop op een item, een drop op een kaart óf een drop buiten alles: drag-over-rand verdwijnt (dragend-hook) | ✅ PASS |
+| 130 | Tekstbewerking synct | items krijgen rev (ms-timestamp); unionInto laat de nieuwste tekst winnen; topic-pull herbouwt óók de volgorde vanuit de server | ✅ PASS |
+| 131 | Oude data compatibel | items zonder rev vallen terug op created; rev-versie wint | ✅ PASS |
+| 132 | Offline log-regels spoelen | pull merkt achtergebleven clog-regels op en triggert een meta-put zodat ze alsnog naar Drive gaan | ✅ PASS |
+| 133 | Verwijderen in twee stappen | eerste tik prullenbak → kruis i.p.v. vinkje + doorgestreept in rood; tweede tik of kruis = markering weg; tweede prullenbak-tik = definitief verwijderen | ✅ PASS |
+| 134 | iPhone-header | ☰ en ☁️ krijgen vaste 44px-banen; datum krimpt met ellipsis; kleinere knoppen ≤640px → alles altijd in beeld | ✅ PASS (CSS) |
+| 135 | Regressie | doneAt-merge, gone, thema, apparaatnaam, centraal logboek, geen wisknop | ✅ PASS |
+
+Testdatum: 11 november 2026, Node-harness met DOM-stubs (52 PASS).
+## v0.7.1 — use case: afgevinkt item direct verwijderen (54/54)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 136 | Open item verwijderen | 1e prullenbak-tik → kruis + doorgestreept; 2e tik (of kruis) = definitief weg | ✅ PASS |
+| 137 | Afgevinkt item verwijderen | één tik op de prullenbak verwijdert meteen (markeringstap overslagen) | ✅ PASS |
+| 138 | Regressie v0.7.0 | lijst-meta-sync, tekst-rev-sync, header, drag-hint, log | ✅ PASS |
+
+Testdatum: 11 november 2026, Node-harness met DOM-stubs (54 PASS).

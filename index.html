@@ -38,12 +38,13 @@ html.force-dark{
 body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
 header{position:sticky;top:0;z-index:10;background:var(--bg);
   border-bottom:1px solid var(--line);padding:10px 8px;
-  display:grid;grid-template-columns:48px 1fr 48px;align-items:center}
-.headermid{display:flex;align-items:center;justify-content:center;gap:2px;width:100%}
+  display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:2px}
+.headermid{display:flex;align-items:center;justify-content:center;gap:2px;width:100%;min-width:0}
 .spacer{flex:1}
-.datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;padding:0 4px}
-.datebox h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.02em;line-height:1.15}
-.datebox .date{color:var(--muted);font-size:12.5px}
+.datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;padding:0 4px;min-width:0;overflow:hidden}
+.datebox h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.02em;line-height:1.15;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.datebox .date{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .navbtn{border:none;background:none;cursor:pointer;font-size:26px;color:var(--ink);
   padding:4px 12px;border-radius:12px;line-height:1;flex:none;font-weight:300}
 .navbtn:hover{background:var(--hover);color:var(--accent)}
@@ -69,6 +70,10 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
   #board{gap:8px;padding:8px 6px 90px}
   .lane{gap:8px}
   header{padding:10px 4px}
+  .navbtn{font-size:22px;padding:4px 7px}
+  .iconbtn{font-size:19px;padding:6px 6px}
+  .datebox h1{font-size:16px}
+  .datebox .date{font-size:11.5px}
 }
 .col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;
@@ -88,6 +93,13 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .item.lifting{position:fixed;z-index:100;pointer-events:none;background:var(--card);color:var(--ink);
   box-shadow:0 8px 22px rgba(0,0,0,.25);border-radius:10px;padding:8px 12px;font-size:14px;opacity:.95}
 .item.lift-over{background:var(--accent-soft);box-shadow:inset 0 2px 0 var(--accent)}
+/* verwijder-markering: eerste tik op de prullenbak → kruis i.p.v. vinkje;
+   tweede tik (of kruis) verwijdert echt */
+.item.dmark{background:var(--hover)}
+.item.dmark .txt{color:var(--danger);text-decoration:line-through}
+.xmark{border:none;background:none;cursor:pointer;color:var(--danger);flex:none;
+  width:18px;height:18px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.xmark svg{width:15px;height:15px}
 .item .txt{flex:1;font-size:14px;word-break:break-word}
 .item input[type=checkbox]{width:18px;height:18px;accent-color:var(--check);flex:none}
 /* kleine ronde knoppen met lijn-iconen (Material-stijl) */
@@ -317,7 +329,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.6.9";
+const VERSION = "0.7.1";
 
 /* lijn-iconen (Material-achtig, geen emoji) */
 const ICON = {
@@ -328,6 +340,7 @@ const ICON = {
   chevDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   chevUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>',
 };
 
 /* ============================================================
@@ -391,6 +404,7 @@ function loadLocal(){
       state.audit = s.audit || [];             // sync-recepten (Drive) laatst gezien
       state.clog = s.clog || [];               // centrale log-regels die nog niet naar Drive zijn
       state.dlog = s.dlog || [];               // centrale log-regels zoals laatst opgehaald
+      state.removedTopics = s.removedTopics || {};   // op andere apparaten verwijderde lijsten
       hideDone = s.hideDone || {};
       tomb = s.tomb || {};
       // geen opgeslagen openLists (oude data): dan de standaard-set incl. boodschappen
@@ -651,6 +665,9 @@ function markDirty(key){
   pushTimer = setTimeout(pushDirty, 5000);
 }
 function payloadFor(k){
+  if(k === "meta"){
+    return { removedTopics: state.removedTopics || {}, updated: nowISO() };
+  }
   if(k.startsWith("day:")){
     const d = k.slice(4);
     const items = {};
@@ -672,9 +689,12 @@ function unionInto(arr, srvItems, gone){
     if(!it || !it.id || (gone && gone[it.id])) continue;
     const loc = byId.get(it.id);
     if(!loc){ arr.push(it); n++; continue; }
-    // item bestaat aan beide kanten: afvink-status met de nieuwste doneAt wint
-    const s = String(it.doneAt || "0"), l = String(loc.doneAt || "0");
-    if(s > l){ loc.done = it.done; loc.doneAt = it.doneAt; n++; }
+    // item bestaat aan beide kanten: afvink-status én tekst met de nieuwste
+    // versie (rev, anders created) laten winnen — anders verdwijnen bewerkingen
+    if(String(it.doneAt || "0") > String(loc.doneAt || "0")){ loc.done = it.done; loc.doneAt = it.doneAt; n++; }
+    if(String(it.rev || it.created || "0") > String(loc.rev || loc.created || "0")){
+      loc.text = it.text; loc.rev = it.rev || it.created; n++;
+    }
   }
   return n;
 }
@@ -726,9 +746,11 @@ async function pushDirty(){
     try{ srvFiles = (await api("getAll")).files || {}; }catch(e){ srvFiles = null; }
     let flushed = false;
     for(const k of keys){
-      if(k.startsWith("day:") && !state.days[k.slice(4)]){ dirtyKeys.delete(k); continue; }
-      if(!k.startsWith("day:") && !state.lists[k]){ dirtyKeys.delete(k); continue; }
-      if(srvFiles) mergeSrvIntoLocal(k, srvFiles[k]);
+      if(k !== "meta"){
+        if(k.startsWith("day:") && !state.days[k.slice(4)]){ dirtyKeys.delete(k); continue; }
+        if(!k.startsWith("day:") && !state.lists[k]){ dirtyKeys.delete(k); continue; }
+        if(srvFiles) mergeSrvIntoLocal(k, srvFiles[k]);
+      }
       const p = payloadFor(k);
       // centrale log-regels (clog) meesturen met de eerste put van deze cyclus;
       // pas na geslaagde put uit de wachtrij — bij mislukking blijven ze bewaard
@@ -740,7 +762,7 @@ async function pushDirty(){
       // lokale updated gelijktrekken aan wat de server nu heeft: voorkomt een
       // zinloze eigen merge bij de volgende pull
       if(k.startsWith("day:")){ if(state.days[k.slice(4)]) state.days[k.slice(4)].updated = p.updated; }
-      else if(state.lists[k]) state.lists[k].updated = p.updated;
+      else if(k !== "meta" && state.lists[k]) state.lists[k].updated = p.updated;
       trimTomb(k);                         // server heeft nu ónze versie; tombstones mogen niet weg (moeten doorgegeven worden), alleen de oude opruimen
       log("Sync-recept: " + k + " → Drive · " + itemSummary(k));
     }
@@ -768,6 +790,27 @@ async function pull(force){
     for(const k of Object.keys(files)){
       const srv = files[k];
       if(!srv) continue;
+      if(k === "meta" && srv.removedTopics){
+        // lijst-verwijderingen van andere apparaten: lokaal opruimen
+        state.removedTopics = state.removedTopics || {};
+        for(const rk of Object.keys(srv.removedTopics)){
+          const ts = srv.removedTopics[rk];
+          if(!state.removedTopics[rk] || ts > state.removedTopics[rk]){
+            state.removedTopics[rk] = ts;
+            if(state.lists[rk]){
+              const id = rk.slice(6);
+              delete state.lists[rk];
+              state.topics = state.topics.filter(t => t.id !== id);
+              openLists.delete(rk);
+              delete tomb[rk];
+              if(activeTopic === rk) activeTopic = null;
+              changed = true;
+              log("Lijst verwijderd op een ander apparaat: " + rk);
+            }
+          }
+        }
+        continue;
+      }
       if(k.startsWith("day:")){
         const d = k.slice(4);
         if(dirtyKeys.has(k)) continue;          // eigen werk eerst
@@ -791,11 +834,13 @@ async function pull(force){
           if(!state.topics.some(t => listKey(t.id) === k))
             state.topics.push({ id: k.slice(6), name: srv.name || k.slice(6) });
         } else if(!dirtyKeys.has(k) && (srv.updated || "") > (state.lists[k].updated || "")){
-          // samenvoegen op item-id: nieuwe server-items erbij, afvink-status met
-          // nieuwste doneAt laten winnen, server-verwijderingen (gone) toepassen
-          const local = state.lists[k].items || [];
-          unionInto(local, srv.items || [], tomb[k]);
-          applyGone(k, local, srv.gone);
+          // heropbouwen vanuit de server-array: nieuwe items erbij, afvink-status
+          // en tekst met de nieuwste versie laten winnen, server-verwijderingen
+          // (gone) toepassen én de volgorde van de server overnemen
+          const merged = (srv.items || []).slice();
+          unionInto(merged, state.lists[k].items || [], tomb[k]);
+          applyGone(k, merged, srv.gone);
+          state.lists[k].items = merged;
           if(srv.name) state.lists[k].name = srv.name;
           if(srv.color) state.lists[k].color = srv.color;
           state.lists[k].updated = srv.updated; changed = true;
@@ -803,6 +848,9 @@ async function pull(force){
       }
     }
     if(changed){ render(); updateSyncBar("gesynchroniseerd"); log("Pull oké: wijzigingen van server overgenomen"); }
+    // centrale log-regels die nog niet in Drive staan kunnen alleen mee met een put:
+    // geen openstaande keys → meta even als dirty markeren, de volgende push spoelt ze weg
+    if(accessToken && (state.clog || []).length && !dirtyKeys.size) markDirty("meta");
   }catch(e){ log("Pull mislukt", e); }
 }
 /* ---------- totaal sync: alles als dirty markeren, outer-join pushen, dan pullen ---------- */
@@ -811,6 +859,7 @@ async function fullSync(){
   toast("Totaal sync — alles samenvoegen met Drive…");
   for(const d of Object.keys(state.days)) if(state.days[d]) dirtyKeys.add("day:" + d);
   for(const k of Object.keys(state.lists)) if(state.lists[k]) dirtyKeys.add(k);
+  if(Object.keys(state.removedTopics || {}).length) dirtyKeys.add("meta");   // verwijderde lijsten doorgeven
   saveLocal(); updateCloudDot(); updateSyncBar("syncing…");
   try{
     await pushDirty();
@@ -982,20 +1031,27 @@ function deleteTopic(key){
   const id = key.slice(6);
   if(CONFIG.STANDARD_TOPICS.some(s => s.id === id)){ toast("Deze vaste lijst kan niet weg"); return; }
   const backup = state.lists[key], wasOpen = openLists.has(key), backupTopic = state.topics.find(t => t.id === id);
+  const nm = (backup && backup.name) || id;
   state.topics = state.topics.filter(t => t.id !== id);
   delete state.lists[key];
   openLists.delete(key);
   if(activeTopic === key) activeTopic = null;
+  // verwijdering aankondigen aan andere apparaten via het meta-bestand (meta.json in Drive):
+  // die zien bij de volgende pull dat deze lijst is verwijderd en ruimen lokaal op
+  state.removedTopics = state.removedTopics || {};
+  state.removedTopics[key] = nowISO();
   pushUndo(() => {
     state.lists[key] = backup;
+    delete state.removedTopics[key];
     if(!state.topics.some(t => t.id === id))
       state.topics.push(backupTopic || { id, name: backup.name });
     if(wasOpen) openLists.add(key);
     saveLocal();
-  }, [key]);
+  }, [key, "meta"]);
   render();
-  offerUndo("Lijst verwijderd");
-  if(accessToken) api("del", key).catch(()=>{});
+  offerUndo("Lijst verwijderd: " + nm);
+  if(accessToken){ api("del", key).catch(()=>{}); markDirty("meta"); }
+  else saveLocal();
 }
 
 function renderGrid(){ renderBoard(); }
@@ -1189,7 +1245,7 @@ function itemdSave(){
   if(ctx.it){
     if(v !== ctx.it.text){
       const it = ctx.it, old = it.text;
-      it.text = v;
+      it.text = v; it.rev = nowISO();   // rev: de bewerking synct naar andere apparaten (tekst-merge)
       pushUndo(() => { it.text = old; saveLocal(); }, [refKey(ctx.ref)]);
       render(); markDirty(refKey(ctx.ref));
     }
@@ -1209,7 +1265,7 @@ function itemdMove(){
 function addItem(ref, value){
   const v = (value || "").trim(); if(!v) return;
   const items = refArr(ref);
-  const it = { id: uid(), text: v, done:false, doneAt:null, created: nowISO() };
+  const it = { id: uid(), text: v, done:false, doneAt:null, created: nowISO(), rev: nowISO() };
   items.push(it);
   pushUndo(() => { refArr(ref).splice(refArr(ref).findIndex(x => x.id === it.id), 1); saveLocal(); }, [refKey(ref)]);
   render(); markDirty(refKey(ref));
@@ -1231,6 +1287,7 @@ function toggleItem(ref, it, done){
   const old = { done: it.done, doneAt: it.doneAt };
   it.done = done;
   it.doneAt = nowISO();   // óók bij afvinken-uit: de nieuwste doneAt wint bij samenvoegen met andere apparaten
+  it.rev = nowISO();      // rev meebewegen: een afvink-actie telt ook als nieuwste versie van het item
   pushUndo(() => { it.done = old.done; it.doneAt = old.doneAt; saveLocal(); }, [refKey(ref)]);
   render(); markDirty(refKey(ref));
   const label = (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text);
@@ -1238,35 +1295,59 @@ function toggleItem(ref, it, done){
 }
 function editText(ref, it){ openItemModal(ref, it); }
 
+/* verwijder-markering: ids die één keer de prullenbak hebben aangeraakt —
+   puur lokaal/visueel (wordt niet gesynct of bewaard) */
+let delMarked = new Set();
+function clearDragOver(){
+  document.querySelectorAll(".col.drag-over").forEach(c => c.classList.remove("drag-over"));
+}
 function makeItem(ref, it){
+  const marked = delMarked.has(it.id);
   const el = document.createElement("div");
-  el.className = "item" + (it.done ? " done" : "");
+  el.className = "item" + (it.done ? " done" : "") + (marked ? " dmark" : "");
   el.draggable = true;
   el.dataset.id = it.id;
-  const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = it.done;
+  if(marked){
+    // gemarkeerd voor verwijderen: kruis i.p.v. vinkje; tik op kruis = markering weg
+    const x = document.createElement("button"); x.className = "xmark"; x.type = "button";
+    x.title = "Markering weghalen — nog een keer prullenbak verwijdert definitief";
+    x.innerHTML = ICON.x;
+    x.onclick = (e) => { e.stopPropagation(); delMarked.delete(it.id); render(); };
+    el.append(x);
+  } else {
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = it.done;
+    cb.onchange = () => toggleItem(ref, it, cb.checked);
+    el.append(cb);
+  }
   const txt = document.createElement("span"); txt.className = "txt"; txt.textContent = it.text;
-  el.append(cb, txt);
+  el.append(txt);
   el.addEventListener("dragstart", e =>
     e.dataTransfer.setData("text/plain", (ref.date || "") + "|" + ref.key + "|" + it.id));
   // desktop: op een ander item laten vallen = op die plek zetten
   el.addEventListener("dragover", e => e.preventDefault());
   el.addEventListener("drop", e => {
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault(); e.stopPropagation(); clearDragOver();
     const [date, srcKey, itemId] = e.dataTransfer.getData("text/plain").split("|");
     reorderItem({ date: date || null, key: srcKey }, ref, itemId, it.id);
   });
+  el.addEventListener("dragend", clearDragOver);   // sleep je buiten alle kaarten, dan is de hint ook weg
   // touch (iOS): lang vasthouden en verschuiven
   el.addEventListener("touchstart", e => startTouchLift(e, ref, it.id, it.text), { passive: true });
   el.addEventListener("touchmove", e => moveTouchLift(e), { passive: false });
   el.addEventListener("touchend", e => endTouchLift(e));
-  cb.onchange = () => toggleItem(ref, it, cb.checked);
-  // potlood = bewerken, prullenbak = verwijderen (tekst zelf doet niets meer)
+  // potlood = bewerken, prullenbak = eerst markeren (kruis), nóg een keer = verwijderen
   const ed = document.createElement("button"); ed.className = "kbtn ed"; ed.type = "button";
   ed.title = "Bewerken"; ed.innerHTML = ICON.edit;
   ed.onclick = (e) => { e.stopPropagation(); openItemModal(ref, it); };
   const del = document.createElement("button"); del.className = "kbtn del danger"; del.type = "button";
-  del.title = "Verwijderen"; del.innerHTML = ICON.trash;
-  del.onclick = (e) => { e.stopPropagation(); deleteItem(ref, it); };
+  del.title = it.done ? "Verwijderen" : (marked ? "Nog een keer tikken = verwijderen" : "Verwijderen (twee keer tikken; afgevinkt kan direct)");
+  del.innerHTML = ICON.trash;
+  del.onclick = (e) => {
+    e.stopPropagation();
+    if(it.done){ delMarked.delete(it.id); deleteItem(ref, it); return; }   // al afgevinkt: direct verwijderen
+    if(delMarked.has(it.id)){ delMarked.delete(it.id); deleteItem(ref, it); }
+    else { delMarked.add(it.id); render(); toast("Nog een keer prullenbak tikken = definitief verwijderen"); }
+  };
   el.append(ed, del);
   return el;
 }
