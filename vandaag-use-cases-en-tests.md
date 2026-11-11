@@ -303,4 +303,17 @@ Testdatum: 11 november 2026, Node-harness met DOM-stubs (52 PASS).
 | 137 | Afgevinkt item verwijderen | één tik op de prullenbak verwijdert meteen (markeringstap overslagen) | ✅ PASS |
 | 138 | Regressie v0.7.0 | lijst-meta-sync, tekst-rev-sync, header, drag-hint, log | ✅ PASS |
 
-Testdatum: 11 november 2026, Node-harness met DOM-stubs (54 PASS).
+Testdatum: 11 november 2026, Node-harness met DOM-stubs (54 PASS).## v0.7.2 — use cases: verplaats-sync, taken meenemen, privé/werk (44/44)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 139 | Verplaatsen = verplaatsen | moveItem haalt het item weg bij de brondag, zet een tombstone + gone in de payload; een stale server-kopie zet het item niet terug (was de "kopieer"-klacht in vóór-0.6.6-versies) | ✅ PASS |
+| 140 | Verplaats-sync roundtrip | pushDirty pusht de brondag ZONDER het item mét gone en de doeldag MÉT het item; andere apparaten halen het bij pull weg | ✅ PASS (async) |
+| 141 | Open taken meenemen | niet-afgevinkte items in ochtend/middag/avond van vroegere dagen verschijnen op vandaag in hetzelfde dagdeel; afgevinkte blijven als geschiedenis; boodschappen ongemoeid | ✅ PASS |
+| 142 | Meenemen = eenmalig | tweede draai doet niets (id-check, geen duplicaten); meenemen zet tombstones en komt in het centrale log | ✅ PASS |
+| 143 | Privé/werk-modus | items krijgen 🌐/🏠/💼-tag; menu-toggle doorloopt alles → privé → werk; ongetagd blijft in elke modus zichtbaar | ✅ PASS |
+| 144 | Scope-tag synct | unionInto-merge neemt tekst én privé/werk-tag van de nieuwste rev over | ✅ PASS |
+| 145 | Meenemen-triggers | bij app-start en bij terugkeer naar de app (visibilitychange, nieuwe dag) | ✅ PASS (structuur) |
+| 146 | Regressie | doneAt/rev/gone-merge, meta-lijst-sync, centraal logboek, apparaatnaam, thema, geen wisknop | ✅ PASS |
+
+Testdatum: 11 november 2026, Node-harness met DOM-stubs (44 PASS).
