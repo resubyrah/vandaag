@@ -316,4 +316,35 @@ Testdatum: 11 november 2026, Node-harness met DOM-stubs (54 PASS).## v0.7.2 — 
 | 145 | Meenemen-triggers | bij app-start en bij terugkeer naar de app (visibilitychange, nieuwe dag) | ✅ PASS (structuur) |
 | 146 | Regressie | doneAt/rev/gone-merge, meta-lijst-sync, centraal logboek, apparaatnaam, thema, geen wisknop | ✅ PASS |
 
-Testdatum: 11 november 2026, Node-harness met DOM-stubs (44 PASS).
+Testdatum: 11 november 2026, Node-harness met DOM-stubs (44 PASS).## v0.7.3 — use cases: header-toggle, modus als standaard voor nieuwe items (31/31)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 147 | Header-toggle | bolletje-knop naast ☰ (vóór ☁️) toont 🌐/🏠/💼 en cyclust alles → privé → werk; staat in élke modus in beeld (grid-baan 38px) | ✅ PASS |
+| 148 | Nieuw item volgt de modus | werk-modus → nieuwe items zijn 💼; privé-modus → 🏠; alles-modus → standaard 🏠 privé | ✅ PASS |
+| 149 | Bestaand item ongemoeid | bewerken behoudt de eigen scope; chips 🌐/🏠/💼 blijven om per item af te wijken | ✅ PASS |
+| 150 | Filter blijft werken | privé/werk-modus verbergt de andere soort; items zonder tag blijven zichtbaar; voorkeur per apparaat bewaard | ✅ PASS |
+| 151 | Regressie | verplaatsen (stale server + tombstone via moveItem), meenemen, rev-merge met scope, meta-lijst-sync — nu mét access-token en force-pull | ✅ PASS |
+
+Testdatum: 12 november 2026, Node-harness met DOM-stubs (31 PASS).## v0.8.0 — use cases: login-hulptab, FAB-dialoog, Dates-lijst (36/36)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 152 | Login-hulptab sluit zichzelf | Google-login opent soms een extra tabblad; is de app zo'n hulptab (window.opener), dan sluit die zichzelf — of toont "dit tabblad mag dicht" i.p.v. de hele app; na login krijgt de PWA de focus terug (window.focus) | ✅ PASS (structuur) |
+| 153 | FAB-dialoog | ➕ rechtsonder opent een keuzevenster: nieuw item / nieuwe date / nieuwe boodschap / nieuwe lijst | ✅ PASS |
+| 154 | Nieuw item op de klok | nieuw item belandt automatisch in ochtend (<12u), middag (12–18u) of avond (≥18u) van de bekeken dag; hint in de knop toont het doel | ✅ PASS |
+| 155 | Snelle date | "Nieuwe date" opent het itemvenster op de Dates-lijst met datum-placeholder (bijv. 17-11: tandarts) | ✅ PASS |
+| 156 | Dates-lijst bestaat | tweede vaste standaardlijst 🗓 (niet verwijderbaar, naast 🛒); na startup gegarandeerd aanwezig | ✅ PASS |
+| 157 | Dates op datum-volgorde | items sorteren op de datum in de tekst: 17-11, 2026-12-05, 3 mrt 2027, "5 november" worden herkend; items zonder datum gaan onderaan (op aanmaak-tijd) | ✅ PASS |
+| 158 | Regressie | scope-filter/modus-standaard, verplaats-sync, meenemen, rev-merge, meta-sync | ✅ PASS |
+
+Testdatum: 13 november 2026, Node-harness met DOM-stubs (36 PASS).## v0.8.1 — use case: item-venster sluit vanzelf bij verlaten (38/38)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 159 | Verlaten = opslaan | het item-venster slaat vanzelf op en sluit zodra je het invoerveld verlaat (tik ergens anders, Enter, achtergrondklik); leeg veld sluit zonder toe te voegen | ✅ PASS |
+| 160 | ＋ houdt open | alleen de ＋-knop houdt het venster open voor het volgende item; Enter = opslaan & sluiten (was: Enter voegde door) | ✅ PASS |
+| 161 | Knoppen binnen het venster | klikken op scope-chips/knoppen die de focus ín het venster houden sluiten níét (contains-check op activeElement) | ✅ PASS (structuur) |
+| 162 | Regressie | dates-sortering, FAB-dialoog, scope-modus, verplaats-sync, meenemen, rev-merge, meta-sync | ✅ PASS |
+
+Testdatum: 13 november 2026, Node-harness met DOM-stubs (38 PASS).
