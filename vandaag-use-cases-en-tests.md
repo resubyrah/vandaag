@@ -347,4 +347,14 @@ Testdatum: 13 november 2026, Node-harness met DOM-stubs (36 PASS).## v0.8.1 — 
 | 161 | Knoppen binnen het venster | klikken op scope-chips/knoppen die de focus ín het venster houden sluiten níét (contains-check op activeElement) | ✅ PASS (structuur) |
 | 162 | Regressie | dates-sortering, FAB-dialoog, scope-modus, verplaats-sync, meenemen, rev-merge, meta-sync | ✅ PASS |
 
-Testdatum: 13 november 2026, Node-harness met DOM-stubs (38 PASS).
+Testdatum: 13 november 2026, Node-harness met DOM-stubs (38 PASS).## v0.8.2 — use cases: weekdag, dimmen, dialoog-verschraling (39/39)
+
+| # | Use case | Verwacht gedrag | Resultaat |
+|---|----------|-----------------|-----------|
+| 163 | Weekdag bij datums | items in de Dates-lijst krijgen een chip met de weekdag (ma/di/wo…) uit de datum in de tekst; lang ingedrukt/hoveren toont de volledige datum; zonder jaartal = lopend jaar | ✅ PASS |
+| 164 | Werk zaken dimmen | in de 🌐 alles-stand worden 💼 werk-items gedimd (50% + cursief), privé-items normaal; in privé/werk-modus verandert niets | ✅ PASS |
+| 165 | Opslaan-knop weg | "Opslaan & sluiten" verwijderd uit het item-venster; wegklikken/Enter = opslaan, ＋ = nog een item (hint-regeltje onderin) | ✅ PASS |
+| 166 | Chip bij bewerken = dicht | bij het bewerken van een item sluit 🏠/💼/🌐-keuze de dialoog meteen (tekst + scope opgeslagen); bij een nieuw item blijft hij open | ✅ PASS |
+| 167 | Regressie | dates-sortering, FAB, scope-modus, blur-save, verplaats-sync, meenemen, rev-merge, meta-sync | ✅ PASS |
+
+Testdatum: 13 november 2026, Node-harness met DOM-stubs (39 PASS).

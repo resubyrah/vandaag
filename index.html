@@ -90,6 +90,11 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .add input:focus{outline:none;border-color:var(--accent);background:var(--card)}
 #itemdScope .btn{flex:1;font-size:12px;padding:6px 4px;margin:0}
 #itemdScope .btn.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+/* weekdag-chip in de Dates-lijst + gedimde werk-items in de alles-stand */
+.wdchip{flex:none;font-size:11px;font-weight:700;color:var(--accent);opacity:.75;
+  background:var(--accent-soft);border-radius:6px;padding:2px 5px;margin-right:4px;text-transform:uppercase}
+.item.wdim{opacity:.5}
+.item.wdim .txt{font-style:italic}
 .item{display:flex;align-items:center;gap:8px;padding:8px 6px;border-radius:10px;border-bottom:1px solid var(--line);cursor:grab}
 .item:last-child{border-bottom:none}
 .item:hover{background:var(--hover)}
@@ -260,8 +265,8 @@ dialog#logd{max-width:min(94vw,780px)}
   <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end">
     <button class="btn sec" id="itemdMove" hidden>⇄ Verplaatsen</button>
     <button class="btn sec" id="itemdDel" hidden style="color:#dc2626">🗑 Verwijderen</button>
-    <button class="btn pri" id="itemdOk">Opslaan</button>
   </div>
+  <p style="margin:8px 0 0;font-size:11px;opacity:.6">Wegklikken of Enter = opslaan &amp; sluiten · ＋ = nog een item</p>
 </dialog>
 
 <dialog id="listd">
@@ -348,7 +353,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.8.1";
+const VERSION = "0.8.2";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -1249,6 +1254,18 @@ function setScope(f, quiet){
   render();
   if(!quiet) toast("Filter: " + (scopeFilter === "p" ? "alleen privé-items" : scopeFilter === "w" ? "alleen werk-items" : "alles (privé + werk)"));
 }
+/* echte Date uit een itemtekst (voor de weekdag in de Dates-lijst); zonder jaar = lopend jaar */
+function dateOfText(text){
+  if(!text) return null;
+  let m = text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  const nowY = new Date().getFullYear();
+  m = text.match(/(\d{1,2})-(\d{1,2})(?:-(\d{2,4}))?/);
+  if(m){ const y = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : nowY; return new Date(y, +m[2] - 1, +m[1]); }
+  m = text.match(/(\d{1,2})\s*(jan|feb|mrt|maa|apr|mei|jun|jul|aug|sep|okt|nov|dec)[a-z]*\.?\s*(\d{2,4})?/i);
+  if(m){ const y = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : nowY; return new Date(y, MONTHS_NL[m[2].toLowerCase()] - 1, +m[1]); }
+  return null;
+}
 const MONTHS_NL = { jan:1, feb:2, mrt:3, maa:3, apr:4, mei:5, jun:6, jul:7, aug:8, sep:9, okt:10, nov:11, dec:12 };
 function dateSortKey(text){
   if(!text) return null;
@@ -1299,7 +1316,6 @@ function openItemModal(ref, it){
   document.getElementById("itemdMove").hidden = !it;
   document.getElementById("itemdDel").hidden = !it;
   document.getElementById("itemdPlus").hidden = !!it;   // ＋ alleen bij nieuw: hele lijst invoeren
-  document.getElementById("itemdOk").textContent = it ? "Opslaan" : "Opslaan & sluiten";
   updateScopeChips();
   document.getElementById("itemd").showModal();
   setTimeout(() => { inp.focus(); if(it) inp.select(); }, 60);
@@ -1311,7 +1327,12 @@ function updateScopeChips(){
     document.getElementById(id).classList.toggle("on", id.slice(-1).toLowerCase() === s);
 }
 for(const [id, val] of [["scopeB","b"],["scopeP","p"],["scopeW","w"]])
-  document.getElementById(id).onclick = () => { if(itemdCtx) itemdCtx.scope = val; updateScopeChips(); };
+  /* bewerken: scope kiezen = meteen opslaan en sluiten; nieuw item: venster blijft open (＋-flow) */
+  document.getElementById(id).onclick = () => {
+    if(!itemdCtx) return;
+    itemdCtx.scope = val; updateScopeChips();
+    if(itemdCtx.it) itemdSave();
+  };
 /* ＋ naast het invoerveld: item toevoegen en meteen het volgende typen */
 function itemdAddAnother(){
   const inp = document.getElementById("itemdInput");
@@ -1392,7 +1413,8 @@ function clearDragOver(){
 function makeItem(ref, it){
   const marked = delMarked.has(it.id);
   const el = document.createElement("div");
-  el.className = "item" + (it.done ? " done" : "") + (marked ? " dmark" : "");
+  el.className = "item" + (it.done ? " done" : "") + (marked ? " dmark" : "")
+    + (scopeFilter === "b" && it.scope === "w" ? " wdim" : "");   // alles-stand: werk-items dimmen
   el.draggable = true;
   el.dataset.id = it.id;
   if(marked){
@@ -1409,6 +1431,15 @@ function makeItem(ref, it){
   }
   const txt = document.createElement("span"); txt.className = "txt"; txt.textContent = it.text;
   el.append(txt);
+  if(ref.key === listKey("dates")){
+    const d = dateOfText(it.text);
+    if(d){
+      const w = document.createElement("span");
+      w.className = "wdchip"; w.textContent = d.toLocaleDateString("nl-NL", { weekday: "short" });
+      w.title = d.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+      el.insertBefore(w, txt);
+    }
+  }
   el.addEventListener("dragstart", e =>
     e.dataTransfer.setData("text/plain", (ref.date || "") + "|" + ref.key + "|" + it.id));
   // desktop: op een ander item laten vallen = op die plek zetten
@@ -1634,7 +1665,6 @@ document.getElementById("fabList").onclick = () => { document.getElementById("fa
 document.getElementById("undoBtn").onclick = doUndo;
 document.getElementById("newlistOk").onclick = confirmAddTopic;
 document.getElementById("newlistName").onkeydown = e => { if(e.key === "Enter") confirmAddTopic(); };
-document.getElementById("itemdOk").onclick = itemdSave;
 document.getElementById("itemdPlus").onclick = itemdAddAnother;
 /* verlaat je het invoerveld, dan slaat het venster vanzelf op en sluit —
    behalve als de focus binnen het venster blijft (＋, scope-chips, knoppen) */
