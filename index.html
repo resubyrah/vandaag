@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0f172a" />
 <title>Vandaag</title>
 <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192" />
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M4.5 12H2.5M6 6.8L4.6 5.4M6 17.2L4.6 18.6M8.5 4.5V2.5M8.5 21.5V19.5'/%3E%3Cpath d='M12 4.5 A7.5 7.5 0 0 1 12 19.5 A10.5 10.5 0 0 0 12 4.5 Z'/%3E%3C/svg%3E" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M12 6 A6 6 0 0 0 12 18'/%3E%3Cpath d='M4.5 12H2.5M6 6.8L4.6 5.4M6 17.2L4.6 18.6M8.5 4.5V2.5M8.5 21.5V19.5'/%3E%3Cpath d='M12 6 A6 6 0 0 1 12 18 A9 9 0 0 0 12 6 Z'/%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="manifest" href="manifest.json" />
 <style>
@@ -36,6 +36,7 @@ html.force-dark{
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+html{overflow-x:hidden}
 header{position:sticky;top:0;z-index:10;background:var(--bg);
   border-bottom:1px solid var(--line);padding:10px 8px;
   display:grid;grid-template-columns:44px 38px minmax(0,1fr) auto;align-items:center;gap:2px}
@@ -89,6 +90,10 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
   #datesDrawer{display:none;max-width:1100px;margin:0 auto;padding:8px 6px 0}
   #datesDrawer.open{display:block}
   #datesDrawer .col{width:100%}
+  /* iPhone: velden op 16px — kleiner doet Safari inzoomen bij aanraken, en daarna
+     blijft de pagina gezoomd (het "te brede scherm"); bovendien nooit breder dan het venster */
+  dialog input[type=text], .add input, .col .addrow input{font-size:16px}
+  #board, #datesDrawer{max-width:100vw}
 }
 .col{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;
@@ -383,7 +388,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.13.0";
+const VERSION = "0.14.1";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -1300,13 +1305,12 @@ function makeColumn(ref, list){
 let scopeFilter = "b";   // b = alles, p = privé, w = werk
 /* strakke lijn-icoontjes: zon = werk, maan (met en-profiel gezichtje) = privé,
    zon+maan-helften = alles */
-/* kale sikkel (gezichtje weg); zon-maan: oorspronkelijke compositie —
-   binnenboogje r6 links + stralen, maansikkel rechts, alles binnen de r9-boog */
+/* zon-maan: precies de geplakte SVG — sikkel + binnenboogje r6 links + 5 stralen links */
 const SCOPE_ICONS = {
-  b: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-     '<circle cx="12" cy="12" r="9"/>' +
+  b: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">' +
+     '<path d="M12 6 A6 6 0 0 0 12 18"/>' +
      '<path d="M4.5 12H2.5M6 6.8L4.6 5.4M6 17.2L4.6 18.6M8.5 4.5V2.5M8.5 21.5V19.5"/>' +
-     '<path d="M12 4.5 A7.5 7.5 0 0 1 12 19.5 A10.5 10.5 0 0 0 12 4.5 Z"/></svg>',
+     '<path d="M12 6 A6 6 0 0 1 12 18 A9 9 0 0 0 12 6 Z"/></svg>',
   p: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
      '<path d="M20.4 14.2A8.4 8.4 0 1 1 9.8 3.6a6.8 6.8 0 0 0 10.6 10.6Z"/></svg>',
   w: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
@@ -1360,6 +1364,28 @@ function setScope(f, quiet){
 /* dates-lijst: de datum van vandaag → item gekopieerd naar het juiste dagdeel
    (tijd erin? → ochtend/middag/avond op de klok, anders ochtend);
    gepasseerde datum → automatisch afgevinken */
+/* makkelijkere dates-invoer: weekdag ("ma zwem" → eerstvolgende maandag) of
+   dag-maand met spatie ("13 12" → 13-12; jaar volgt de jaar-aanname van dateOfText) */
+function normalizeDateText(text){
+  if(!text) return text;
+  const WD = { ma:1, di:2, wo:3, do:4, vr:5, za:6, zo:0 };
+  let m = text.match(/^(ma|di|wo|do|vr|za|zo)\b[\s.:-]*/i);
+  if(m){
+    const n = new Date();
+    const add = (WD[m[1].toLowerCase()] - n.getDay() + 7) % 7;
+    const d = new Date(n.getFullYear(), n.getMonth(), n.getDate() + add);
+    return text.replace(m[0], String(d.getDate()).padStart(2, "0") + "-" + String(d.getMonth() + 1).padStart(2, "0") + " ");
+  }
+  m = text.match(/^(\d{1,2})[ \t]+(\d{1,2})(?=[ \t]|$)/);
+  if(m){
+    const dd = +m[1], mm = +m[2];
+    if(mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31)
+      return m[1].padStart(2, "0") + "-" + m[2].padStart(2, "0") + text.slice(m[0].length);
+  }
+  return text;
+}
+/* rustgevender: elk item begint met een hoofdletter (alleen weergave; de tekst zelf blijft onaangeroerd) */
+function cap(s){ s = String(s || ""); return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function stripDateFromText(text){
   const m = (text || "").match(/^\s*(?:\d{4}-\d{1,2}-\d{1,2}|\d{1,2}-\d{1,2}(?:-\d{2,4})?|\d{1,2}\s*(?:jan|feb|mrt|maa|apr|mei|jun|jul|aug|sep|okt|nov|dec)[a-z]*\.?(?:\s*\d{2,4})?)\s*(?::|-|–|—)?\s*/i);
   return ((m ? text.slice(m[0].length) : text) || "").trim() || (text || "").trim();
@@ -1548,7 +1574,8 @@ function itemdSave(){
     const weeklyChanged = !!(it.weekly) !== !!ctx.weeklyOrig;
     if(v !== it.text || scopeChanged || weeklyChanged){
       const old = { text: it.text, scope: it.scope };
-      it.text = v; it.scope = newScope; it.rev = nowISO();   // rev: de bewerking (tekst én scope) synct
+      it.text = (ctx.ref && ctx.ref.key === listKey("dates") ? normalizeDateText(v) : v);
+      it.scope = newScope; it.rev = nowISO();   // rev: de bewerking (tekst én scope) synct
       pushUndo(() => { it.text = old.text; it.scope = old.scope; saveLocal(); }, [refKey(ctx.ref)]);
       render(); markDirty(refKey(ctx.ref));
     }
@@ -1566,7 +1593,8 @@ function itemdMove(){
 }
 
 function addItem(ref, value, scope){
-  const v = (value || "").trim(); if(!v) return;
+  let v = (value || "").trim(); if(!v) return;
+  if(ref.key === listKey("dates")) v = normalizeDateText(v);   // "ma zwem" → "17-11 zwem", "13 12" → "13-12"
   const items = refArr(ref);
   const it = { id: uid(), text: v, done:false, doneAt:null, created: nowISO(), rev: nowISO(), scope: scope || "b" };
   items.push(it);
@@ -1625,7 +1653,7 @@ function makeItem(ref, it){
   }
   const isDates = ref.key === listKey("dates");
   const ddate = isDates ? dateOfText(it.text) : null;
-  const showTxt = (isDates && ddate && stripDateFromText(it.text)) || it.text;
+  const showTxt = cap((isDates && ddate && stripDateFromText(it.text)) || it.text);
   const txt = document.createElement("span"); txt.className = "txt"; txt.textContent = showTxt;
   txt.title = "Tik: aanpassen";
   txt.onclick = () => openItemModal(ref, it);   // tik op de tekst = bewerken; verslepen blijft vasthouden/slepen
@@ -1848,7 +1876,7 @@ document.getElementById("fabItem").onclick = () => {
 document.getElementById("fabDate").onclick = () => {
   document.getElementById("fabd").close();
   openItemModal({ key: listKey("dates") }, null);
-  document.getElementById("itemdInput").placeholder = "bijv. 17-11: tandarts 08:30";
+  document.getElementById("itemdInput").placeholder = "bijv. ma tandarts 08:30 · of 13 12 · of 17-11";
 };
 document.getElementById("fabBoodschap").onclick = () => {
   document.getElementById("fabd").close();
@@ -2052,5 +2080,6 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
 if("serviceWorker" in navigator && location.protocol === "https:")
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="nnna6rLhRliaSfKN3qYpHQ==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
