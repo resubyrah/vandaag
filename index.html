@@ -38,7 +38,7 @@ html.force-dark{
 body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
 header{position:sticky;top:0;z-index:10;background:var(--bg);
   border-bottom:1px solid var(--line);padding:10px 8px;
-  display:grid;grid-template-columns:44px minmax(0,1fr) 38px 44px;align-items:center;gap:2px}
+  display:grid;grid-template-columns:44px 38px minmax(0,1fr) 44px;align-items:center;gap:2px}
 .headermid{display:flex;align-items:center;justify-content:center;gap:2px;width:100%;min-width:0}
 .spacer{flex:1}
 .datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;padding:0 4px;min-width:0;overflow:hidden}
@@ -49,6 +49,8 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
   padding:4px 12px;border-radius:12px;line-height:1;flex:none;font-weight:300}
 .navbtn:hover{background:var(--hover);color:var(--accent)}
 .navbtn:active{background:var(--hover)}
+/* pijltjes verborgen: de datum zelf is het navigatievlak (links eerder, rechts later) */
+#prevDay,#nextDay{display:none}
 #syncrow{position:sticky;top:54px;z-index:9;text-align:center;font-size:11px;color:var(--muted);
   padding:3px 0 0;background:var(--bg);min-height:0}
 #syncrow:not(:empty){min-height:15px}
@@ -57,7 +59,7 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .iconbtn:hover{background:var(--hover);color:var(--accent)}
 .iconbtn:disabled{opacity:.25;cursor:default}
 #syncBtn{position:relative}
-#scopeBtn{font-size:17px;padding:6px 2px}
+#scopeBtn{padding:8px 9px;line-height:0}   /* lijn-icoon (zon/maan), naast ☰ */
 #cloudDot{position:absolute;top:3px;right:2px;width:9px;height:9px;border-radius:50%;
   background:var(--danger);border:1.5px solid var(--card)}
 .grid{display:grid;gap:12px;padding:12px 12px 90px;
@@ -105,6 +107,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
    tweede tik (of kruis) verwijdert echt */
 .item.dmark{background:var(--hover)}
 .item.dmark .txt{color:var(--danger);text-decoration:line-through}
+/* afgevinkt: blijft op zijn plek, valt minder op dan open taken */
+.item.done{opacity:.55}
+.item.done .txt{text-decoration:line-through;opacity:.65}
 .xmark{border:none;background:none;cursor:pointer;color:var(--danger);flex:none;
   width:18px;height:18px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .xmark svg{width:15px;height:15px}
@@ -190,15 +195,13 @@ dialog#logd{max-width:min(94vw,780px)}
 <body>
 <header>
   <button class="iconbtn" id="menuBtn" title="Menu">☰</button>
+  <button class="iconbtn" id="scopeBtn" title="Filter: alles / privé / werk"></button>
   <div class="headermid">
-    <button class="navbtn" id="prevDay" title="Vorige dag">‹</button>
-    <div class="datebox" id="dateBox" title="Tik: terug naar vandaag">
+    <div class="datebox" id="dateBox" title="Links tikken: eerdere dag · rechts: latere dag · midden: vandaag">
       <h1 id="dateTitle"></h1>
       <span class="date" id="dateSub"></span>
     </div>
-    <button class="navbtn" id="nextDay" title="Volgende dag">›</button>
   </div>
-  <button class="iconbtn" id="scopeBtn" title="Filter: alles / privé / werk (nieuwe items krijgen de modus mee)">🌐</button>
   <button class="iconbtn" id="syncBtn" title="Sync">☁️<span id="cloudDot"></span></button>
 </header>
 <div id="syncrow"></div>
@@ -289,7 +292,6 @@ dialog#logd{max-width:min(94vw,780px)}
     <button class="btn sec" id="menuSync">🔄 Alles synchroniseren (reparatie)</button>
     <button class="btn sec" id="menuDev">💻 Apparaatnaam…</button>
     <button class="btn sec" id="menuTheme">🎨 Thema</button>
-    <button class="btn sec" id="menuScope">🌐 Alles: privé + werk</button>
     <button class="btn sec" id="menuLog">📋 Logboek</button>
     <button class="btn pri" id="menuClose">Sluiten</button>
   </div>
@@ -353,7 +355,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.8.2";
+const VERSION = "0.9.0";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -988,11 +990,11 @@ function render(){ renderBoard(); renderDate(); saveLocal(); }
 function renderDate(){
   const d = new Date(viewDate + "T12:00");
   document.getElementById("dateTitle").textContent =
-    d.toLocaleDateString("nl-NL", { weekday:"long" });
+    viewDate === todayStr() ? "vandaag"
+    : d.toLocaleDateString("nl-NL", { weekday:"long" });
   document.getElementById("dateSub").textContent =
-    d.toLocaleDateString("nl-NL", { day:"numeric", month:"long" })
-    + (viewDate !== todayStr() ? " — tik voor vandaag" : "");
-  document.title = d.toLocaleDateString("nl-NL", { weekday:"long", day:"numeric", month:"long" }) + " · Vandaag";
+    d.toLocaleDateString("nl-NL", { day:"numeric", month:"long" });
+  document.title = (viewDate === todayStr() ? "Vandaag" : d.toLocaleDateString("nl-NL", { weekday:"long", day:"numeric", month:"long" })) + " · Vandaag";
 }
 function goTo(dateStr){
   viewDate = dateStr;
@@ -1098,7 +1100,7 @@ function deleteTopic(key){
 }
 
 function renderGrid(){ renderBoard(); }
-function laneCount(){ return (window.innerWidth || 1024) <= 640 ? 2 : 4; }   // mobiel 2 banen
+function laneCount(){ return (window.innerWidth || 1024) <= 640 ? 2 : 5; }   // mobiel 2, desktop 5 banen (standaardlijsten)
 function renderBoard(){
   const board = document.getElementById("board");
   board.innerHTML = "";
@@ -1181,8 +1183,11 @@ function makeColumn(ref, list){
     }
     h.appendChild(ttl);
   }
-  // kleursteelje: drager van de lijstkleur (geen pastel-achtergrond meer)
-  const stripe = document.createElement("span"); stripe.className = "stripe"; h.appendChild(stripe);
+  // kleursteelje: drager van de lijstkleur (geen pastel-achtergrond meer);
+  // standaardlijsten hebben een icoon en zijn al herkenbaar → geen streep
+  if(!isStandard){
+    const stripe = document.createElement("span"); stripe.className = "stripe"; h.appendChild(stripe);
+  }
   if(collapsed){
     // stub: open-teller + tik op de kop = weer openen
     const items0 = visibleItems(ref);
@@ -1224,8 +1229,8 @@ function makeColumn(ref, list){
   const box = document.createElement("div");
   box.className = "listbox";
   const items = visibleItems(ref);
-  // afgevinkte items naar onderen schuiven (open taken bovenaan)
-  for(const it of [...items.filter(i => !i.done), ...items.filter(i => i.done)])
+  // afgevinkte items blijven op hun plek staan (dimmen zie je aan de stijl)
+  for(const it of items)
     box.appendChild(makeItem(ref, it));
   col.appendChild(box);
 
@@ -1241,21 +1246,73 @@ function makeColumn(ref, list){
    boodschappen verbergt afgevinkte zodra je naar een latere dag kijkt.
    Let op: items zonder tag (scope "b" = beide) zijn in élke modus zichtbaar. */
 let scopeFilter = "b";   // b = alles, p = privé, w = werk
+/* strakke lijn-icoontjes voor de modus-toggle: zon = werk, maan = privé,
+   zon+maan-helften = alles */
+const SCOPE_ICONS = {
+  b: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
+     '<path d="M12 6 A6 6 0 0 0 12 18" fill="none"/>' +
+     '<path d="M4.5 12H2.5M6 6.8L4.6 5.4M6 17.2L4.6 18.6M8.5 4.5V2.5M8.5 21.5V19.5"/>' +
+     '<path d="M12 6 A6 6 0 0 1 12 18 A7.6 7.6 0 0 0 12 6 Z" fill="currentColor" stroke="none"/></svg>',
+  p: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+     '<path d="M20.4 14.2A8.4 8.4 0 1 1 9.8 3.6a6.8 6.8 0 0 0 10.6 10.6Z"/></svg>',
+  w: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
+     '<circle cx="12" cy="12" r="4.2"/>' +
+     '<path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/></svg>'
+};
 function setScope(f, quiet){
   scopeFilter = (f === "p" || f === "w") ? f : "b";
   try{ localStorage.setItem("vandaag_scope", scopeFilter); }catch(e){}
-  const b = document.getElementById("menuScope");
-  if(b) b.textContent = scopeFilter === "p" ? "🏠 Alleen privé" : scopeFilter === "w" ? "💼 Alleen werk" : "🌐 Alles: privé + werk";
   const h = document.getElementById("scopeBtn");
   if(h){
-    h.textContent = scopeFilter === "p" ? "🏠" : scopeFilter === "w" ? "💼" : "🌐";
-    h.title = "Filter: " + (scopeFilter === "p" ? "alleen privé (nieuwe items → privé)" : scopeFilter === "w" ? "alleen werk (nieuwe items → werk)" : "alles; nieuwe items → privé");
+    h.innerHTML = SCOPE_ICONS[scopeFilter] || SCOPE_ICONS.b;
+    h.title = "Filter: " + (scopeFilter === "p" ? "alleen privé (maan); nieuwe items → privé"
+      : scopeFilter === "w" ? "alleen werk (zon); nieuwe items → werk"
+      : "alles (zon + maan); nieuwe items → privé");
   }
   render();
   if(!quiet) toast("Filter: " + (scopeFilter === "p" ? "alleen privé-items" : scopeFilter === "w" ? "alleen werk-items" : "alles (privé + werk)"));
 }
-/* echte Date uit een itemtekst (voor de weekdag in de Dates-lijst); zonder jaar = lopend jaar */
+/* dates-lijst: de datum van vandaag → item gekopieerd naar het juiste dagdeel
+   (tijd erin? → ochtend/middag/avond op de klok, anders ochtend);
+   gepasseerde datum → automatisch afgevinken */
+function stripDateFromText(text){
+  const m = (text || "").match(/^\s*(?:\d{4}-\d{1,2}-\d{1,2}|\d{1,2}-\d{1,2}(?:-\d{2,4})?|\d{1,2}\s*(?:jan|feb|mrt|maa|apr|mei|jun|jul|aug|sep|okt|nov|dec)[a-z]*\.?(?:\s*\d{2,4})?)\s*(?::|-|–|—)?\s*/i);
+  return ((m ? text.slice(m[0].length) : text) || "").trim() || (text || "").trim();
+}
+function processDates(){
+  const today = todayStr();
+  const k = listKey("dates");
+  const items = state.lists[k] && state.lists[k].items;
+  if(!items) return 0;
+  let acted = 0;
+  for(const it of items){
+    if(it.done || !it.text) continue;
+    const d = dateOfText(it.text);
+    if(!d) continue;
+    const ds = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    if(ds < today){                                   // gepasseerd: automatisch afvinken
+      it.done = true; it.doneAt = nowISO(); it.rev = nowISO();
+      markDirty(k); acted++;
+      clog("Datum gepasseerd — afgestreept: " + it.text);
+    } else if(ds === today){                          // vandaag: kopie naar het dagdeel
+      const t = it.text.match(/(\d{1,2}):(\d{2})/);
+      const key = !t ? "ochtend" : (+t[1] < 12 ? "ochtend" : +t[1] < 18 ? "middag" : "avond");
+      const dst = dayItems(today, key);
+      const cid = "date-" + it.id;                    // vast id: geen dubbele kopie, óók niet op andere apparaten
+      if(dst.some(x => x.id === cid)) continue;       // al gekopieerd
+      if((tomb["day:" + today] || {})[cid]) continue; // hier verwijderd: niet opnieuw
+      dst.push({ id: cid, text: stripDateFromText(it.text), done: false, doneAt: null,
+                 created: nowISO(), rev: nowISO(), scope: it.scope || "b" });
+      markDirty("day:" + today); acted++;
+      const dp = CONFIG.DAY_PARTS.find(p => p.key === key);
+      clog("Date vandaag → gekopieerd naar " + (dp ? dp.name : key) + ": " + stripDateFromText(it.text));
+    }
+  }
+  if(acted){ log("Dates: " + acted + " actie(s) — kopie naar vandaag en/of afgestreept"); saveLocal(); render(); }
+  return acted;
+}
 function dateOfText(text){
+  /* echte Date uit een itemtekst (weekdag, Dates-afhandeling); zonder jaar = lopend jaar */
   if(!text) return null;
   let m = text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
   if(m) return new Date(+m[1], +m[2] - 1, +m[3]);
@@ -1615,10 +1672,6 @@ document.getElementById("menuDev").onclick = () => {
 };
 document.getElementById("menuTheme").onclick = () => cycleTheme();
 document.getElementById("scopeBtn").onclick = () => setScope(scopeFilter === "b" ? "p" : scopeFilter === "p" ? "w" : "b");
-document.getElementById("menuScope").onclick = () => {
-  document.getElementById("menu").close();
-  setScope(scopeFilter === "b" ? "p" : scopeFilter === "p" ? "w" : "b");
-};
 document.getElementById("devOk").onclick = () => {
   const v = document.getElementById("devName").value.trim();
   if(v){ try{ localStorage.setItem("vandaag_devname", v); }catch(e){} }
@@ -1738,9 +1791,13 @@ document.getElementById("itemdMove").onclick = itemdMove;
 document.querySelectorAll("dialog").forEach(d =>
   d.addEventListener("click", e => { if(e.target === d) d.close(); }));
 
-document.getElementById("prevDay").onclick = () => goTo(addDays(viewDate, -1));
-document.getElementById("nextDay").onclick = () => goTo(addDays(viewDate, 1));
-document.getElementById("dateBox").onclick = () => { if(viewDate !== todayStr()) goTo(todayStr()); };
+document.getElementById("dateBox").onclick = e => {
+  const r = e.currentTarget.getBoundingClientRect();
+  const fx = (e.clientX - r.left) / r.width;
+  if(fx < 0.33) goTo(addDays(viewDate, -1));             // links van de datum: eerder
+  else if(fx > 0.67) goTo(addDays(viewDate, 1));        // rechts van de datum: later
+  else if(viewDate !== todayStr()) goTo(todayStr());    // midden: terug naar vandaag
+};
 
 /* swipe links/rechts = vorige/volgende dag */
 let swipeX = null, swipeY = null;
@@ -1817,6 +1874,7 @@ function carryOpenItems(){
 loadLocal();
 cleanupBoodschappen();
 carryOpenItems();
+processDates();
 setScope(scopeFilter, true);   // menu-knop-label syncen met bewaarde filter
 log("App gestart — v" + VERSION + " (" + location.origin + ") · apparaat: " + deviceId());
 render();
@@ -1830,6 +1888,7 @@ setInterval(() => { if(document.visibilityState === "visible") pull(); }, 10000)
 document.addEventListener("visibilitychange", () => {
   if(document.visibilityState === "visible"){
     carryOpenItems();                       // nieuwe dag begonnen? open taken meenemen
+    processDates();                         // date van vandaag? → kopie; gepasseerd? → afvinken
     if(viewDate === todayStr()) render();
     pull();
   }

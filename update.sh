@@ -19,7 +19,7 @@ newest() {
 
 html="$(newest html)"
 js="$(newest js)"
-md="$(newest md)"
+# md="$(newest md)"
 
 if [ -z "$html" ] && [ -z "$js" ] && [ -z "$md" ]; then
   echo "Geen .html-, .js- of .md-bestand gevonden in $SRC" >&2
@@ -31,13 +31,13 @@ close() {
   [ "${diff#-}" -le "$TOLERANCE" ]
 }
 
-move_md=false
-if [ -n "$md" ]; then
-  move_md=true
-  for ref in "$html" "$js"; do
-    if [ -n "$ref" ] && ! close "$md" "$ref"; then move_md=false; fi
-  done
-fi
+#move_md=false
+#if [ -n "$md" ]; then
+#  move_md=true
+#  for ref in "$html" "$js"; do
+#    if [ -n "$ref" ] && ! close "$md" "$ref"; then move_md=false; fi
+#  done
+#fi
 
 if [ -n "$html" ]; then
   mv -f "$html" "$DEST/index.html"
@@ -53,9 +53,9 @@ else
   echo "Geen .js-bestand gevonden, overgeslagen"
 fi
 
-if $move_md; then
-  mv -f "$md" "$DEST/"
-  echo "$md -> $DEST/$(basename "$md")"
-elif [ -n "$md" ]; then
-  echo "Overgeslagen (tijd wijkt te veel af): $md"
-fi
+#if $move_md; then
+#  mv -f "$md" "$DEST/"
+#  echo "$md -> $DEST/$(basename "$md")"
+#elif [ -n "$md" ]; then
+#  echo "Overgeslagen (tijd wijkt te veel af): $md"
+#fi
