@@ -35,8 +35,12 @@ html.force-dark{
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
-html{overflow-x:hidden}
+/* iPhone: snelle opeenvolgende tikken (afvinken, prullenbak, chips) triggeren op iOS
+   de dubbel-tik-zoom — dan lijkt de pagina opeens "te breed" en moet je uitzoomen.
+   manipulation laat scrollen & knijpen gewoon toe, maar zet dubbel-tik-zoom uit. */
+html{overflow-x:hidden;touch-action:manipulation}
+body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;touch-action:manipulation}
+button,input,label,.item,.badge,.datebox,.hbtn,.kbtn{touch-action:manipulation}
 header{position:sticky;top:0;z-index:10;background:var(--bg);
   border-bottom:1px solid var(--line);padding:10px 8px;
   display:grid;grid-template-columns:44px 38px minmax(0,1fr) auto;align-items:center;gap:2px}
@@ -139,6 +143,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
   width:18px;height:18px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .xmark svg{width:15px;height:15px}
 .item .txt{flex:1;font-size:14px;word-break:break-word}
+/* terugkerend-icoontje (elke week) naast de tekst in de Dates-lijst */
+.item .rep{flex:none;display:inline-flex;color:var(--accent);opacity:.9}
+.item .rep svg{width:13px;height:13px}
 .item input[type=checkbox]{width:18px;height:18px;accent-color:var(--check);flex:none}
 /* kleine ronde knoppen met lijn-iconen (Material-stijl) */
 .kbtn{border:none;background:none;cursor:pointer;color:var(--muted);opacity:.6;
@@ -190,6 +197,7 @@ dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 .btn{border:none;border-radius:12px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;margin:0 4px;font-family:inherit}
 .btn.pri{background:var(--accent);color:#fff}
 .btn.sec{background:var(--hover);color:var(--ink)}
+.btn svg{vertical-align:-3px;margin-right:6px}
 #menuBox{display:flex;flex-direction:column;gap:8px}
 #menuBox .btn{width:100%;margin:0}
 #menuVer{color:var(--muted);font-size:11px;text-align:center;margin:6px 0 0}
@@ -226,7 +234,7 @@ dialog#logd{max-width:min(94vw,780px)}
   </div>
   <div class="hdrright">
     <button class="iconbtn" id="datesBtn" title="Dates — lijst tonen/verbergen"></button>
-    <button class="iconbtn" id="syncBtn" title="Sync">☁️<span id="cloudDot"></span></button>
+    <button class="iconbtn" id="syncBtn" title="Sync"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .9-8.9A7 7 0 0 0 5 12.3 4 4 0 0 0 6.5 19h11Z"/></svg><span id="cloudDot"></span></button>
   </div>
 </header>
 <div id="syncrow"></div>
@@ -250,7 +258,7 @@ dialog#logd{max-width:min(94vw,780px)}
 </dialog>
 
 <dialog id="logd">
-  <h3>📋 Logboek</h3>
+  <h3>Logboek</h3>
   <p>Nieuwste eerst. Fouten staan ook in de browserconsole (F12 → Console; Mac: ⌘⌥J).</p>
   <div id="logBox" style="max-height:50vh;overflow:auto;background:#0f172a;color:#e2e8f0;
     border-radius:10px;padding:10px;font:11px/1.5 ui-monospace,monospace"></div>
@@ -267,14 +275,14 @@ dialog#logd{max-width:min(94vw,780px)}
 
 <dialog id="fabd">
   <h3>➕ Wat wil je toevoegen?</h3>
-  <button class="btn pri" id="fabItem" style="width:100%;margin:8px 0 0">✏️ Nieuw item <span id="fabItemHint" style="opacity:.65"></span></button>
-  <button class="btn sec" id="fabDate" style="width:100%;margin:8px 0 0">🗓 Nieuwe date (vergeet-mij-niet)</button>
-  <button class="btn sec" id="fabBoodschap" style="width:100%;margin:8px 0 0">🛒 Nieuwe boodschap</button>
-  <button class="btn sec" id="fabList" style="width:100%;margin:8px 0 0">🆕 Nieuwe lijst</button>
+  <button class="btn pri" id="fabItem" style="width:100%;margin:8px 0 0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Nieuw item <span id="fabItemHint" style="opacity:.65"></span></button>
+  <button class="btn sec" id="fabDate" style="width:100%;margin:8px 0 0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>Nieuwe date (vergeet-mij-niet)</button>
+  <button class="btn sec" id="fabBoodschap" style="width:100%;margin:8px 0 0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M3 4h2l2.4 10.4a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 1.9-1.4L21 8H6"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg>Nieuwe boodschap</button>
+  <button class="btn sec" id="fabList" style="width:100%;margin:8px 0 0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>Nieuwe lijst</button>
 </dialog>
 
 <dialog id="devd">
-  <h3>💻 Apparaatnaam</h3>
+  <h3>Apparaatnaam</h3>
   <p style="margin:0 0 8px;font-size:12px;opacity:.7">Wordt in het logboek bij elke regel getoond, zodat je ziet welk apparaat de actie deed.</p>
   <input type="text" id="devName" placeholder="bijv. Mac thuis" />
   <button class="btn pri" id="devOk" style="width:100%;margin:8px 0 0">Opslaan</button>
@@ -288,19 +296,19 @@ dialog#logd{max-width:min(94vw,780px)}
     <button class="plusbtn" id="itemdPlus" title="Toevoegen en verder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
   </div>
   <div id="itemdScope" style="display:flex;gap:6px;margin-top:2px">
-    <button class="btn sec" id="scopeB" title="Altijd zichtbaar, in privé- én werk-modus">🌐 Beide</button>
-    <button class="btn sec" id="scopeP" title="Alleen zichtbaar in privé-modus">🏠 Privé</button>
-    <button class="btn sec" id="scopeW" title="Alleen zichtbaar in werk-modus">💼 Werk</button>
+    <button class="btn sec" id="scopeB" title="Altijd zichtbaar, in privé- én werk-modus"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 4 5.6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-5.6-4-9s1.5-6.4 4-9Z"/></svg> Beide</button>
+    <button class="btn sec" id="scopeP" title="Alleen zichtbaar in privé-modus"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/></svg> Privé</button>
+    <button class="btn sec" id="scopeW" title="Alleen zichtbaar in werk-modus"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="3" y="7.5" width="18" height="12.5" rx="2"/><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/></svg> Werk</button>
   </div>
   <div style="display:flex;gap:6px;margin-top:6px">
     <button class="btn sec" id="itemdWeekly" hidden title="Herhaalt elke week: na de datum verschuift het item automatisch een week (i.p.v. afstrepen)">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
-      Terugkerend — elke week
+      Elke week
     </button>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end">
-    <button class="btn sec" id="itemdMove" hidden>⇄ Verplaatsen</button>
-    <button class="btn sec" id="itemdDel" hidden style="color:#dc2626">🗑 Verwijderen</button>
+    <button class="btn sec" id="itemdMove" hidden><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg> Verplaatsen</button>
+    <button class="btn sec" id="itemdDel" hidden style="color:#dc2626"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Verwijderen</button>
   </div>
   <p style="margin:8px 0 0;font-size:11px;opacity:.6">Wegklikken of Enter = opslaan &amp; sluiten · ＋ = nog een item</p>
 </dialog>
@@ -310,8 +318,8 @@ dialog#logd{max-width:min(94vw,780px)}
   <input type="text" id="listdName" />
   <div id="listdColors"></div>
   <div style="display:flex;flex-wrap:wrap;gap:8px">
-    <button class="btn sec" id="listdUp" title="Eerder in de rij">▲ Eerder</button>
-    <button class="btn sec" id="listdDown" title="Later in de rij">▼ Later</button>
+    <button class="btn sec" id="listdUp" title="Eerder in de rij"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><polyline points="6 15 12 9 18 15"/></svg>Eerder</button>
+    <button class="btn sec" id="listdDown" title="Later in de rij"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><polyline points="6 9 12 15 18 9"/></svg>Later</button>
     <button class="btn pri" id="listdOk" style="flex:1">Opslaan</button>
   </div>
 </dialog>
@@ -319,13 +327,13 @@ dialog#logd{max-width:min(94vw,780px)}
 <dialog id="menu">
   <h3>☰ Menu</h3>
   <div id="menuBox">
-    <button class="btn sec" id="menuAuth">🔑 Inloggen</button>
-    <button class="btn sec" id="menuLogout" hidden>🔓 <span id="menuUser"></span> — uitloggen</button>
-    <button class="btn sec" id="menuDate">📅 Andere datum…</button>
-    <button class="btn sec" id="menuSync">🔄 Alles synchroniseren (reparatie)</button>
-    <button class="btn sec" id="menuDev">💻 Apparaatnaam…</button>
-    <button class="btn sec" id="menuTheme">🎨 Thema</button>
-    <button class="btn sec" id="menuLog">📋 Logboek</button>
+    <button class="btn sec" id="menuAuth"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c1.6-3.4 4.3-5 7.5-5s5.9 1.6 7.5 5"/></svg>Inloggen</button>
+    <button class="btn sec" id="menuLogout" hidden><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span id="menuUser"></span> — uitloggen</button>
+    <button class="btn sec" id="menuDate"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>Andere datum…</button>
+    <button class="btn sec" id="menuSync"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>Alles synchroniseren (reparatie)</button>
+    <button class="btn sec" id="menuDev"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 19h20"/></svg>Apparaatnaam…</button>
+    <button class="btn sec" id="menuTheme"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none"/></svg>Thema</button>
+    <button class="btn sec" id="menuLog"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Logboek</button>
     <button class="btn pri" id="menuClose">Sluiten</button>
   </div>
   <p id="menuVer"></p>
@@ -368,7 +376,9 @@ function applyTheme(){
   root.classList.toggle("force-dark", t === "dark");
   root.classList.toggle("force-light", t === "light");
   const b = document.getElementById("menuTheme");
-  if(b) b.textContent = "🎨 Thema: " + (t === "dark" ? "donker" : t === "light" ? "licht" : "automatisch");
+  // inline svg: applyTheme() draait vóór de ICON-const bestaat (geen dependency)
+  if(b) b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none"/></svg>Thema: '
+    + (t === "dark" ? "donker" : t === "light" ? "licht" : "automatisch");
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.setAttribute("content", t === "light" ? "#f4f5f7" : t === "dark" ? "#131417"
     : (window.matchMedia && window.matchMedia("(prefers-color-scheme:dark)").matches ? "#131417" : "#f4f5f7"));
@@ -388,7 +398,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.14.1";
+const VERSION = "0.15.0";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -416,6 +426,19 @@ const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   chevUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>',
+  repeat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>',
+  swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg>',
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/></svg>',
+  work: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12.5" rx="2"/><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/></svg>',
+  globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 4 5.6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-5.6-4-9s1.5-6.4 4-9Z"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>',
+  refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c1.6-3.4 4.3-5 7.5-5s5.9 1.6 7.5 5"/></svg>',
+  logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
+  laptop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 19h20"/></svg>',
+  theme: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none"/></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .9-8.9A7 7 0 0 0 5 12.3 4 4 0 0 0 6.5 19h11Z"/></svg>',
 };
 
 /* ============================================================
@@ -595,6 +618,7 @@ function initGIS(){
         user = info.email;
       }catch(e){ log("userinfo ophalen mislukt", e); }
       log("Ingelogd als " + (user || "onbekend") + " — sync gestart");
+      clog("Ingelogd als " + (user || "onbekend") + " — sync gestart");
       saveToken();                         // token bewaren: volgende keer stilletjes weer in
       try{ window.focus(); }catch(e){}     // na het Google-venster: terug naar dít tabblad/PWA
       updateMenuAuth();
@@ -629,6 +653,7 @@ function logout(){
   if(accessToken && window.google) try{ google.accounts.oauth2.revoke(accessToken, ()=>{}); }catch(e){}
   user = null; accessToken = null;
   try{ localStorage.removeItem("vandaag_tok"); }catch(e){}
+  clog("Uitgelogd — voortaan alleen lokaal bewaard op dit apparaat");
   updateMenuAuth(); toast("Uitgelogd — alleen lokaal");
 }
 /* Token bewaren/hergebruiken: de enige échte stille login (Safari blokkeert
@@ -729,6 +754,21 @@ async function api(action, key, data, logEntries){
    ============================================================ */
 const dirtyKeys = new Set();
 let pushTimer = null, retryTimer = null;
+let syncErrors = 0, syncPausedUntil = 0;   // backoff-teller en pauze na sync-fouten
+
+/* token is echt verlopen/ingeldig: NIET blijven proberen (dat activeert alleen
+   maar de brute-force-rem op de server) — sync stil, dirty keys blijven lokaal
+   bewaard; na het opnieuw inloggen spoelt pushDirty() ze vanzelf door */
+function sessionExpired(){
+  if(accessToken) log("Sessie verlopen — sync gepauzeerd tot opnieuw inloggen");
+  accessToken = null;
+  try{ localStorage.removeItem("vandaag_tok"); }catch(e){}
+  syncErrors = 0; syncPausedUntil = 0;
+  clearTimeout(retryTimer);
+  clog("Sessie verlopen op dit apparaat — sync stond stil; wijzigingen bleven lokaal bewaard");
+  updateMenuAuth();
+  toast("Sessie verlopen — tik op het wolkje rechtsboven om opnieuw in te loggen");
+}
 
 function markDirty(key){
   dirtyKeys.add(key);
@@ -816,7 +856,9 @@ function mergeSrvIntoLocal(k, srv){
 }
 async function pushDirty(){
   if(!accessToken || !dirtyKeys.size) return;
+  if(Date.now() < syncPausedUntil) return;      // backoff-pauze: de retry-timer neemt het later over
   const keys = [...dirtyKeys];
+  if(syncErrors) log("Sync-hervatting: nieuwe poging (" + keys.length + " key(s), poging " + (syncErrors + 1) + ")");
   try{
     // eerst server-kopieën ophalen en samenvoegen: nooit iets overschrijven dat
     // een ander apparaat ondertussen heeft toegevoegd (outer join, niets gaat verloren)
@@ -845,19 +887,34 @@ async function pushDirty(){
       log("Sync-recept: " + k + " → Drive · " + itemSummary(k));
     }
     log("Push oké: " + keys.length + " key(s) naar Drive");
+    syncErrors = 0; syncPausedUntil = 0;       // gelukt: backoff-teller terug op nul
     updateSyncBar("gesynchroniseerd");
     pull();
   }catch(e){
-    log("Push mislukt (" + dirtyKeys.size + " keys blijven dirty)", e);
-    updateSyncBar(e && e.message === "locked"
-      ? "tijdelijk geblokkeerd — over enkele minuten opnieuw"
-      : "sync mislukt — probeert over 10 s opnieuw");
+    const msg = (e && e.message) || "";
+    log("Sync mislukt (" + dirtyKeys.size + " key(s) blijven lokaal)", e);
+    clog("Sync mislukt: " + (msg === "locked" ? "server rem actief (te veel mislukte pogingen)" : msg || "onbekende fout")
+      + " — " + dirtyKeys.size + " wijziging(en) wachten lokaal");
+    if(msg === "unauthorized"){
+      sessionExpired();                        // token dood: stop, niet de rem voeden
+      return;
+    }
+    /* backoff: elke volgende fout wacht langer — 10 s → 30 s → 1 min → 2 min → 5 min.
+       Zo triggert één slecht netwerkmoment nooit de server-rem (10 pogingen/minuut
+       was precies genoeg om jezelf buiten te sluiten). */
+    syncErrors = Math.min(syncErrors + 1, 5);
+    const wait = [10000, 30000, 60000, 120000, 300000][syncErrors - 1];
+    syncPausedUntil = Date.now() + wait;
+    updateSyncBar(msg === "locked"
+      ? "tijdelijk geblokkeerd — over " + Math.round(wait/1000) + " s opnieuw"
+      : "sync mislukt — probeert over " + Math.round(wait/1000) + " s opnieuw");
     clearTimeout(retryTimer);
-    retryTimer = setTimeout(pushDirty, 10000);
+    retryTimer = setTimeout(pushDirty, wait);
   }
 }
 async function pull(force){
   if(!accessToken) return;
+  if(!force && Date.now() < syncPausedUntil) return;   // backoff-pauze: niet hameren
   if(!force && dirtyKeys.size) return;
   try{
     const r = await api("getAll");
@@ -929,7 +986,18 @@ async function pull(force){
     // centrale log-regels die nog niet in Drive staan kunnen alleen mee met een put:
     // geen openstaande keys → meta even als dirty markeren, de volgende push spoelt ze weg
     if(accessToken && (state.clog || []).length && !dirtyKeys.size) markDirty("meta");
-  }catch(e){ log("Pull mislukt", e); }
+  }catch(e){
+    const msg = (e && e.message) || "";
+    log("Pull mislukt", e);
+    if(msg === "unauthorized"){ sessionExpired(); return; }
+    if(msg === "locked"){
+      // rem actief: pulls ook even stoppen (anders blijven we elke 10 s aankloppen)
+      syncPausedUntil = Math.max(syncPausedUntil, Date.now() + 120000);
+      clog("Pull geweigerd: server rem actief — app wacht 2 min en probeert opnieuw");
+    } else if(msg === "verify-error"){
+      clog("Pull mislukt: Google-verificatie tijdelijk onbereikbaar — probeert zo opnieuw");
+    }
+  }
 }
 /* ---------- totaal sync: alles als dirty markeren, outer-join pushen, dan pullen ---------- */
 async function fullSync(){
@@ -1475,6 +1543,15 @@ function replaceDateInText(text, d){
   if(m) return text.replace(m[0], ds);
   return text;
 }
+/* tijd in een itemtekst ("08:30", "9.00 uur") → minuten-getal; null = geen tijd */
+function timeSortKey(text){
+  if(!text) return null;
+  let m = text.match(/(\d{1,2})[:.](\d{2})(?!\d)/);
+  if(!m) return null;
+  const h = +m[1], min = +m[2];
+  if(h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
 function dateSortKey(text){
   if(!text) return null;
   let m = text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);                       // 2026-11-17
@@ -1490,9 +1567,14 @@ function visibleItems(ref){
   if(scopeFilter !== "b")
     items = items.filter(it => (it.scope || "b") !== (scopeFilter === "p" ? "w" : "p"));
   if(ref.key === listKey("dates"))
-    items = items.slice().sort((a, b) => {          // dates: op volgorde van de datum in de tekst
-      const ka = dateSortKey(a.text), kb = dateSortKey(b.text);
-      if(ka != null && kb != null) return ka - kb;
+    items = items.slice().sort((a, b) => {          // dates: op volgorde van de datum in de tekst,
+      const ka = dateSortKey(a.text), kb = dateSortKey(b.text);   // en op dezelfde dag: oplopend op tijd
+      if(ka != null && kb != null){
+        if(ka !== kb) return ka - kb;
+        const ta = timeSortKey(a.text), tb = timeSortKey(b.text);
+        if(ta != null && tb != null && ta !== tb) return ta - tb;
+        return String(a.created || "").localeCompare(String(b.created || ""));
+      }
       if(ka != null) return -1;
       if(kb != null) return 1;
       return String(a.created || "").localeCompare(String(b.created || ""));
@@ -1527,6 +1609,7 @@ function openItemModal(ref, it){
   wk.classList.toggle("on", !!(it && it.weekly));
   document.getElementById("itemdMove").hidden = !it;
   document.getElementById("itemdDel").hidden = !it;
+  document.getElementById("scopeB").hidden = !!it;   // "beide" alleen bij nieuw: bij bewerken kies je privé of werk
   document.getElementById("itemdPlus").hidden = !!it;   // ＋ alleen bij nieuw: hele lijst invoeren
   updateScopeChips();
   document.getElementById("itemd").showModal();
@@ -1682,6 +1765,13 @@ function makeItem(ref, it){
   el.addEventListener("touchstart", e => startTouchLift(e, ref, it.id, it.text), { passive: true });
   el.addEventListener("touchmove", e => moveTouchLift(e), { passive: false });
   el.addEventListener("touchend", e => endTouchLift(e));
+  // terugkerend (elke week): klein herhaal-icoontje naast de tekst, vóór de prullenbak
+  let rep = null;
+  if(isDates && it.weekly){
+    rep = document.createElement("span");
+    rep.className = "rep"; rep.title = "Terugkerend — elke week";
+    rep.innerHTML = ICON.repeat;
+  }
   // prullenbak = eerst markeren (kruis), nóg een keer = verwijderen; bewerken = tik op de tekst
   const del = document.createElement("button"); del.className = "kbtn del danger"; del.type = "button";
   del.title = it.done ? "Verwijderen" : (marked ? "Nog een keer tikken = verwijderen" : "Verwijderen (twee keer tikken; afgevinkt kan direct)");
@@ -1692,6 +1782,7 @@ function makeItem(ref, it){
     if(delMarked.has(it.id)){ delMarked.delete(it.id); deleteItem(ref, it); }
     else { delMarked.add(it.id); render(); toast("Nog een keer prullenbak tikken = definitief verwijderen"); }
   };
+  if(rep) el.append(rep);
   el.append(del);
   return el;
 }
@@ -1766,6 +1857,10 @@ function showMoveMenu(srcRef, it, x, y){
   const m = document.createElement("menu"); m.className = "move";
   const mk = (label, fn) => { const b = document.createElement("button"); b.textContent = label;
     b.onclick = () => { m.remove(); fn(); }; m.appendChild(b); };
+  const mkh = (html, fn) => { const b = document.createElement("button");
+    b.innerHTML = ICON.calendar.replace("<svg ", '<svg width="14" height="14" style="vertical-align:-2px;margin-right:5px" ')
+      + html;   // statisch html-label met lijn-icoon (lijstnamen blijven via mk: veilige tekst)
+    b.onclick = () => { m.remove(); fn(); }; m.appendChild(b); };
   for(const k of openLists){
     if(srcRef.date ? (k === srcRef.key) : (k === srcRef.key)) continue;   // zelfde lijst op zelfde dag overslaan
     const isDay = DAY_KEYS.includes(k);
@@ -1774,9 +1869,9 @@ function showMoveMenu(srcRef, it, x, y){
       : listTitle({ date: null, key: k });
     mk("→ " + name, () => moveItem(srcRef, { date: isDay ? viewDate : null, key: k }, it.id));
   }
-  mk("📅 → " + dateTitleOf(addDays(viewDate,1)), () =>
+  mkh(" → " + dateTitleOf(addDays(viewDate,1)), () =>
     moveItem(srcRef, { date: addDays(viewDate,1), key: srcRef.date ? srcRef.key : "ochtend" }, it.id));
-  mk("📅 Andere datum…", () => {
+  mkh(" Andere datum…", () => {
     const v = prompt("Verplaatsen naar datum (jjjj-mm-dd, of 'morgen'):", addDays(viewDate,1));
     if(!v) return;
     const d = v.trim() === "morgen" ? addDays(todayStr(),1) : v.trim();
@@ -2045,6 +2140,7 @@ carryOpenItems();
 processDates();
 setScope(scopeFilter, true);   // menu-knop-label syncen met bewaarde filter
 log("App gestart — v" + VERSION + " (" + location.origin + ") · apparaat: " + deviceId());
+clog("App gestart v" + VERSION);   // apparaat was actief — ook zichtbaar als de sync pas later lukt
 render();
 updateMenuAuth();
 // geen Google-challenge bij het openen: eerst gewoon lijstjes maken.
@@ -2080,6 +2176,6 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
 if("serviceWorker" in navigator && location.protocol === "https:")
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="nnna6rLhRliaSfKN3qYpHQ==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="AlYHfebDo6KaXBtltCpamQ==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
