@@ -37,19 +37,19 @@ html.force-dark{
 *{box-sizing:border-box}
 /* iPhone: snelle opeenvolgende tikken (afvinken, prullenbak, chips) triggeren op iOS
    de dubbel-tik-zoom — dan lijkt de pagina opeens "te breed" en moet je uitzoomen.
-   manipulation laat scrollen & knijpen gewoon toe, maar zet dubbel-tik-zoom uit. */
-html{overflow-x:hidden;touch-action:manipulation}
-body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;touch-action:manipulation}
+   manipulation laat scrollen & knijpen gewoon toe, maar zet dubbel-tik-zoom uit.
+   overflow-x:clip i.p.v. hidden: hidden maakt van html een scroll-container en
+   breekt daarmee op iOS-Safari position:sticky — de header schoof dus mee weg. */
+html{overflow-x:clip;touch-action:manipulation}
+body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:clip;touch-action:manipulation}
 button,input,label,.item,.badge,.datebox,.hbtn,.kbtn{touch-action:manipulation}
 header{position:sticky;top:0;z-index:10;background:var(--bg);
   border-bottom:1px solid var(--line);padding:10px 8px;
   display:grid;grid-template-columns:44px 38px minmax(0,1fr) auto;align-items:center;gap:2px}
 .hdrright{display:flex;align-items:center;gap:2px}
-#datesBtn{display:none;padding:8px 9px;line-height:0}
-#datesBtn.on{background:var(--accent-soft);color:var(--accent)}
 .headermid{display:flex;align-items:center;justify-content:center;gap:2px;width:100%;min-width:0}
 .spacer{flex:1}
-.datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;padding:0 4px;min-width:0;overflow:hidden}
+.datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;padding:0 4px;min-width:0;overflow:hidden;flex:1}   /* vult de hele middenkolom: de onzichtbare dag-knoppen links/rechts zijn nu groot */
 .datebox h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.02em;line-height:1.15;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .datebox .date{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -89,10 +89,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
   .iconbtn{font-size:19px;padding:6px 6px}
   .datebox h1{font-size:16px}
   .datebox .date{font-size:11.5px}
-  /* mobiel: dates-lijst als volle-breedte lade bovenaan, via kalenderknop naast het wolkje */
-  #datesBtn{display:inline-flex}
-  #datesDrawer{display:none;max-width:1100px;margin:0 auto;padding:8px 6px 0}
-  #datesDrawer.open{display:block}
+  /* mobiel: dates als vaste lade bovenaan — kop altijd in beeld; tik op de kop = groter/kleiner
+     (ingeklapt = compacte kop met teller, open = volledige lijst) */
+  #datesDrawer{display:block;max-width:1100px;margin:0 auto;padding:8px 6px 0}
   #datesDrawer .col{width:100%}
   /* iPhone: velden op 16px — kleiner doet Safari inzoomen bij aanraken, en daarna
      blijft de pagina gezoomd (het "te brede scherm"); bovendien nooit breder dan het venster */
@@ -107,6 +106,7 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .col.collapsed .listbox,.col.collapsed .plus{display:none}
 .col.collapsed h2{margin:0;cursor:pointer}
 .col.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
+.col.wdimlist{opacity:.55}
 .col h2{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
 /* kop: inhoud (icoon of titel) links, knoppen rechts; plus-knop helemaal rechts */
 .col h2 .hfill{flex:1}
@@ -115,8 +115,8 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
   text-transform:uppercase;line-height:1}
 .add input{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;background:var(--hover);color:var(--ink)}
 .add input:focus{outline:none;border-color:var(--accent);background:var(--card)}
-#itemdScope .btn{flex:1;font-size:12px;padding:6px 4px;margin:0}
-#itemdScope .btn.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+#itemdScope .btn,#listdScope .btn{flex:1;font-size:12px;padding:6px 4px;margin:0}
+#itemdScope .btn.on,#listdScope .btn.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
 /* weekdag+datum in de Dates-lijst + gedimde werk-items in de alles-stand;
    item-tekst is klikbaar voor bewerken (potlood is weg) */
 .wdblock{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;margin-right:4px;
@@ -146,7 +146,13 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 /* terugkerend-icoontje (elke week) naast de tekst in de Dates-lijst */
 .item .rep{flex:none;display:inline-flex;color:var(--accent);opacity:.9}
 .item .rep svg{width:13px;height:13px}
-.item input[type=checkbox]{width:18px;height:18px;accent-color:var(--check);flex:none}
+/* afvink-hokje in dezelfde strakke lijnstijl als de rest (geen standaard-checkbox) */
+.item input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;flex:none;cursor:pointer;
+  border:2px solid var(--muted);border-radius:7px;background:none;position:relative;margin:0;transition:border-color .15s,background .15s}
+.item input[type=checkbox]:checked{border-color:var(--check);background:var(--check)}
+.item input[type=checkbox]:checked::after{content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;
+  border:solid #fff;border-width:0 2.2px 2.2px 0;transform:rotate(45deg)}
+.item input[type=checkbox]:active{transform:scale(.9)}
 /* kleine ronde knoppen met lijn-iconen (Material-stijl) */
 .kbtn{border:none;background:none;cursor:pointer;color:var(--muted);opacity:.6;
   padding:3px;border-radius:8px;line-height:0;flex:none;display:inline-flex}
@@ -233,7 +239,6 @@ dialog#logd{max-width:min(94vw,780px)}
     </div>
   </div>
   <div class="hdrright">
-    <button class="iconbtn" id="datesBtn" title="Dates — lijst tonen/verbergen"></button>
     <button class="iconbtn" id="syncBtn" title="Sync"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .9-8.9A7 7 0 0 0 5 12.3 4 4 0 0 0 6.5 19h11Z"/></svg><span id="cloudDot"></span></button>
   </div>
 </header>
@@ -316,6 +321,11 @@ dialog#logd{max-width:min(94vw,780px)}
 <dialog id="listd">
   <h3 id="listdTitle">Lijst</h3>
   <input type="text" id="listdName" />
+  <div id="listdScope" style="display:flex;gap:6px;margin-top:2px">
+    <button class="btn sec" id="listdScopeB" title="In beide modi zichtbaar"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 4 5.6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-5.6-4-9s1.5-6.4 4-9Z"/></svg> Beide</button>
+    <button class="btn sec" id="listdScopeP" title="Alleen zichtbaar in privé-modus (in werkmodus verborgen)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/></svg> Privé</button>
+    <button class="btn sec" id="listdScopeW" title="Alleen zichtbaar in werk-modus (in privé-modus verborgen; in beide-modus gedimd)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="3" y="7.5" width="18" height="12.5" rx="2"/><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/></svg> Werk</button>
+  </div>
   <div id="listdColors"></div>
   <div style="display:flex;flex-wrap:wrap;gap:8px">
     <button class="btn sec" id="listdUp" title="Eerder in de rij"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><polyline points="6 15 12 9 18 15"/></svg>Eerder</button>
@@ -355,7 +365,7 @@ const CONFIG = {
   ],
   // vaste lijsten die altijd bestaan en niet verwijderbaar zijn
   STANDARD_TOPICS: [
-    { id:"boodschappen", name:"Boodschappen", icon:"🛒", color:"#0891b2" },
+    { id:"boodschappen", name:"Boodschappen", icon:"🛒", color:"#0891b2", scope:"p" },
     { id:"dates",        name:"Dates",        icon:"🗓", color:"#d97706" }
   ],
   // kleuren voor zelfgemaakte lijsten: bepaalt de rand en de gesloten chip
@@ -398,7 +408,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.15.0";
+const VERSION = "0.17.0";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -540,7 +550,8 @@ function loadLocal(){
     if(!state.topics.some(t => t.id === st.id))
       state.topics.push({ id: st.id, name: st.name, icon: st.icon, color: st.color });
     const k = listKey(st.id);
-    if(!state.lists[k]) state.lists[k] = { name: st.name, items: [] };
+    if(!state.lists[k]) state.lists[k] = { name: st.name, items: [], scope: st.scope || "b" };
+    if(st.scope && !state.lists[k].scope) state.lists[k].scope = st.scope;   // boodschappen = privé, ook op bestaande installs
   }
   viewDate = todayStr();
 }
@@ -793,7 +804,7 @@ function payloadFor(k){
     return { name:"Dag " + d, date:d, items, gone: tomb[k] ? Object.keys(tomb[k]) : [], updated: nowISO() };
   }
   const l = state.lists[k] || {};
-  return { name: l.name, color: l.color, items: l.items || [], gone: tomb[k] ? Object.keys(tomb[k]) : [], updated: nowISO() };
+  return { name: l.name, color: l.color, scope: l.scope || "b", items: l.items || [], gone: tomb[k] ? Object.keys(tomb[k]) : [], updated: nowISO() };
 }
 /* ---------- outer join: server-items die we lokaal nog niet hebben erbij halen (op item-id).
    Tombstones: lokaal verwijderde ids worden NIET teruggezet.
@@ -978,6 +989,7 @@ async function pull(force){
           state.lists[k].items = merged;
           if(srv.name) state.lists[k].name = srv.name;
           if(srv.color) state.lists[k].color = srv.color;
+          if(srv.scope) state.lists[k].scope = srv.scope;   // lijst-modus van andere apparaat overnemen
           state.lists[k].updated = srv.updated; changed = true;
         }
       }
@@ -1069,6 +1081,13 @@ function showLog(){
   }).join("\n");
   let out = "";
   if(dlog) out += "── centraal logboek (Drive, alle apparaten) ──\n" + dlog + "\n\n";
+  // centrale regels van dít apparaat die nog niet naar Drive konden (offline / sync-stil)
+  const pend = (state.clog || []).map(e => {
+    const d = new Date(e.t);
+    return d.toLocaleTimeString("nl-NL", { hour:"2-digit", minute:"2-digit" })
+      + "  " + (e.device || "?") + "  " + (e.msg || "");
+  }).join("\n");
+  if(pend) out += "── nog te synchroniseren (offline, dit apparaat) ──\n" + pend + "\n\n";
   out += "── dit apparaat ──\n" + localTxt;
   const audit = (state.audit || []).slice().reverse().slice(0, 30);
   if(audit.length){
@@ -1135,6 +1154,7 @@ function renderBadges(){
   for(const d of CONFIG.DAY_PARTS) if(!openLists.has(d.key)) el.appendChild(mkBadge(d.key));
   for(const t of state.topics){
     const k = listKey(t.id);
+    if(listHidden(k)) continue;                    // privé-lijst in werkmodus (e.v.) geen badge
     if(!openLists.has(k)) el.appendChild(mkBadge(k, {removeable: !CONFIG.STANDARD_TOPICS.some(s => s.id === t.id)}));
   }
   el.style.display = el.children.length ? "flex" : "none";
@@ -1224,22 +1244,24 @@ function renderBoard(){
   for(const st of CONFIG.STANDARD_TOPICS){
     if(st.id === "dates" && (window.innerWidth || 1024) <= 640) continue;   // mobiel: dates zit in de lade
     const k = listKey(st.id);
+    if(listHidden(k)) continue;                     // boodschappen (privé) in werkmodus: geen kolom
     const lane = lanes[li % NL];
     put(makeColumn({ date: null, key: k }, state.lists[k]));
     if(st.id === "dates") lane.classList.add("wide");   // desktop: 5e kolom wat breder
   }
-  // mobiel: de dates-lijst als volle-breedte lade onder het bord (open via kalenderknop)
+  // mobiel: dates als vaste lade bovenaan — kop altijd in beeld, tik = groter/kleiner
   const drw = document.getElementById("datesDrawer");
   drw.innerHTML = "";
   if((window.innerWidth || 1024) <= 640){
     const k = listKey("dates");
     drw.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
   }
-  drw.classList.toggle("open", datesOpen);
   // eigen lijsten: in de kortste baan — lege plek onder een korte vaste lijst vult zich vanzelf
   for(const t of state.topics){
     if(CONFIG.STANDARD_TOPICS.some(s => s.id === t.id)) continue;
-    const col = makeColumn({ date: null, key: listKey(t.id) }, state.lists[listKey(t.id)]);
+    const k = listKey(t.id);
+    if(listHidden(k)) continue;                     // werk-lijst in privé-modus (e.v.): weg
+    const col = makeColumn({ date: null, key: k }, state.lists[k]);
     let best = 0;
     for(let i = 1; i < NL; i++) if(laneH(lanes[i]) < laneH(lanes[best])) best = i;
     lanes[best].appendChild(col);
@@ -1283,6 +1305,8 @@ function makeColumn(ref, list){
   const tintc = ref.date ? (CONFIG.DAY_PARTS.find(d => d.key === ref.key) || {}).color
               : ((list && list.color) || (st && st.color) || "#94a3b8");
   col.style.setProperty("--c", tintc);
+  // beide-modus: werk-lijsten gedimd (net als werk-items) — privé-lijsten normaal
+  if(!ref.date && scopeFilter === "b" && listScope(ref.key) === "w") col.classList.add("wdimlist");
   const h = document.createElement("h2");
   const t = ref.date ? null : state.topics.find(x => listKey(x.id) === ref.key);
   const icon = ref.date ? CONFIG.DAY_PARTS.find(d => d.key === ref.key).icon : (t && t.icon);
@@ -1371,19 +1395,20 @@ function makeColumn(ref, list){
    boodschappen verbergt afgevinkte zodra je naar een latere dag kijkt.
    Let op: items zonder tag (scope "b" = beide) zijn in élke modus zichtbaar. */
 let scopeFilter = "b";   // b = alles, p = privé, w = werk
+/* lijst-modus (werk/privé per lijst, hard filter): de lijst-JSON heeft scope
+   "b"/"p"/"w"; boodschappen = privé. Verkeerde modus → hele lijst weg
+   (geen kolom, geen badge); in beide-modus alles, werk-lijsten gedimd. */
+function listScope(key){ const l = state.lists[key]; return (l && l.scope) || "b"; }
+function listHidden(key){ const s = listScope(key); return scopeFilter !== "b" && s !== "b" && s !== scopeFilter; }
 /* strakke lijn-icoontjes: zon = werk, maan (met en-profiel gezichtje) = privé,
    zon+maan-helften = alles */
 /* zon-maan: precies de geplakte SVG — sikkel + binnenboogje r6 links + 5 stralen links */
+/* strakke lijn-icoontjes: globe = alles, huis = privé, koffertje = werk —
+   dezelfde iconen als de chips in het item-dialoog */
 const SCOPE_ICONS = {
-  b: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">' +
-     '<path d="M12 6 A6 6 0 0 0 12 18"/>' +
-     '<path d="M4.5 12H2.5M6 6.8L4.6 5.4M6 17.2L4.6 18.6M8.5 4.5V2.5M8.5 21.5V19.5"/>' +
-     '<path d="M12 6 A6 6 0 0 1 12 18 A9 9 0 0 0 12 6 Z"/></svg>',
-  p: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-     '<path d="M20.4 14.2A8.4 8.4 0 1 1 9.8 3.6a6.8 6.8 0 0 0 10.6 10.6Z"/></svg>',
-  w: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
-     '<circle cx="12" cy="12" r="4.2"/>' +
-     '<path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/></svg>'
+  b: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 4 5.6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-5.6-4-9s1.5-6.4 4-9Z"/></svg>',
+  p: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/></svg>',
+  w: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12.5" rx="2"/><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/></svg>'
 };
 /* witte lijn-icoontjes voor de standaardlijsten (dagdelen + boodschappen + dates) */
 const LINE_ICONS = {
@@ -1394,20 +1419,8 @@ const LINE_ICONS = {
   dates: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>'
 };
 /* mobiel: kalenderknop naast het wolkje toont/verbergt de dates-lade onderaan */
-let datesOpen = false;
-try{ datesOpen = localStorage.getItem("vandaag_dates_open") === "1"; }catch(e){}
-(function(){
-  const db = document.getElementById("datesBtn");
-  if(!db) return;
-  db.innerHTML = LINE_ICONS.dates;
-  db.classList.toggle("on", datesOpen);
-  db.onclick = () => {
-    datesOpen = !datesOpen;
-    try{ localStorage.setItem("vandaag_dates_open", datesOpen ? "1" : "0"); }catch(e){}
-    db.classList.toggle("on", datesOpen);
-    document.getElementById("datesDrawer").classList.toggle("open", datesOpen);
-  };
-})();
+/* dates op mobiel: vaste lade bovenaan, geen aparte kalenderknop meer —
+   de lade-kop zelf is de tik-knop (ingeklapt = compact met teller, tik = open; ook weer dicht) */
 function yearOfText(text){
   if(!text) return null;
   let m = text.match(/(\d{4})-\d{1,2}-\d{1,2}/); if(m) return +m[1];
@@ -1422,9 +1435,9 @@ function setScope(f, quiet){
   const h = document.getElementById("scopeBtn");
   if(h){
     h.innerHTML = SCOPE_ICONS[scopeFilter] || SCOPE_ICONS.b;
-    h.title = "Filter: " + (scopeFilter === "p" ? "alleen privé (maan); nieuwe items → privé"
-      : scopeFilter === "w" ? "alleen werk (zon); nieuwe items → werk"
-      : "alles (zon + maan); nieuwe items → privé");
+    h.title = "Filter: " + (scopeFilter === "p" ? "alleen privé (huisje); nieuwe items → privé"
+      : scopeFilter === "w" ? "alleen werk (koffertje); nieuwe items → werk"
+      : "alles (privé + werk); nieuwe items → privé");
   }
   render();
   if(!quiet) toast("Filter: " + (scopeFilter === "p" ? "alleen privé-items" : scopeFilter === "w" ? "alleen werk-items" : "alles (privé + werk)"));
@@ -1599,7 +1612,8 @@ function finishCol(col, ref){
 let itemdCtx = null;   // { ref, it|null }
 function modeScope(){ return scopeFilter === "w" ? "w" : "p"; }   // nieuwe items volgen de modus; in "alles" standaard privé
 function openItemModal(ref, it){
-  itemdCtx = { ref, it, scope: it ? (it.scope || "b") : modeScope(), weekly: !!(it && it.weekly), weeklyOrig: !!(it && it.weekly) };
+  itemdCtx = { ref, it, scope: it ? (it.scope || "b") : (listScope(ref.key) !== "b" ? listScope(ref.key) : modeScope()),
+    weekly: !!(it && it.weekly), weeklyOrig: !!(it && it.weekly) };
   document.getElementById("itemdTitle").textContent = it ? "Taak aanpassen" : "Nieuw item — " + listTitle(ref);
   const inp = document.getElementById("itemdInput");
   inp.value = it ? it.text : "";
@@ -1811,6 +1825,12 @@ function reorderItem(srcRef, dstRef, itemId, beforeId){
   render();
   markDirty(refKey(srcRef));
   if(refKey(srcRef) !== refKey(dstRef)) markDirty(refKey(dstRef));
+  // volgorde-wijziging: item-tekst in de undo-knop én het centrale logboek (geen toast)
+  const rlabel = (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text);
+  const u = undoStack[undoStack.length - 1];
+  if(u) u.label = "Volgorde: '" + rlabel + "'";
+  updateUndoBtn();
+  clog("Volgorde gewijzigd: '" + rlabel + "'");
 }
 
 /* ---------- lang vasthouden (280 ms) → item oppakken en verschuiven ---------- */
@@ -1857,21 +1877,27 @@ function showMoveMenu(srcRef, it, x, y){
   const m = document.createElement("menu"); m.className = "move";
   const mk = (label, fn) => { const b = document.createElement("button"); b.textContent = label;
     b.onclick = () => { m.remove(); fn(); }; m.appendChild(b); };
-  const mkh = (html, fn) => { const b = document.createElement("button");
-    b.innerHTML = ICON.calendar.replace("<svg ", '<svg width="14" height="14" style="vertical-align:-2px;margin-right:5px" ')
-      + html;   // statisch html-label met lijn-icoon (lijstnamen blijven via mk: veilige tekst)
+  /* knop met lijn-icoon: svg + html; alleen voor app-teksten (namen/datums),
+     lijstnamen van gebruikers blijven via mk → veilige textContent */
+  const mkh = (svg, html, fn) => { const b = document.createElement("button");
+    b.innerHTML = svg.replace("<svg ", '<svg width="14" height="14" style="vertical-align:-2px;margin-right:5px" ') + html;
     b.onclick = () => { m.remove(); fn(); }; m.appendChild(b); };
   for(const k of openLists){
-    if(srcRef.date ? (k === srcRef.key) : (k === srcRef.key)) continue;   // zelfde lijst op zelfde dag overslaan
+    if(k === srcRef.key) continue;   // zelfde lijst op zelfde dag overslaan
     const isDay = DAY_KEYS.includes(k);
-    const name = isDay
-      ? CONFIG.DAY_PARTS.find(d=>d.key===k).icon + " " + CONFIG.DAY_PARTS.find(d=>d.key===k).name
-      : listTitle({ date: null, key: k });
-    mk("→ " + name, () => moveItem(srcRef, { date: isDay ? viewDate : null, key: k }, it.id));
+    if(isDay){
+      const dp = CONFIG.DAY_PARTS.find(d => d.key === k);
+      // doel-dagdelen landen op de BEKEKEN dag: die expliciet in het label
+      // (na een swipe is "Middag" zomaar de middag van een andere dag)
+      mkh(LINE_ICONS[k], " " + dp.name + " · " + dateTitleOf(viewDate),
+        () => moveItem(srcRef, { date: viewDate, key: k }, it.id));
+    } else {
+      mk("→ " + listTitle({ date: null, key: k }), () => moveItem(srcRef, { date: null, key: k }, it.id));
+    }
   }
-  mkh(" → " + dateTitleOf(addDays(viewDate,1)), () =>
+  mkh(ICON.calendar, " → " + dateTitleOf(addDays(viewDate,1)), () =>
     moveItem(srcRef, { date: addDays(viewDate,1), key: srcRef.date ? srcRef.key : "ochtend" }, it.id));
-  mkh(" Andere datum…", () => {
+  mkh(ICON.calendar, " Andere datum…", () => {
     const v = prompt("Verplaatsen naar datum (jjjj-mm-dd, of 'morgen'):", addDays(viewDate,1));
     if(!v) return;
     const d = v.trim() === "morgen" ? addDays(todayStr(),1) : v.trim();
@@ -1886,6 +1912,7 @@ function showMoveMenu(srcRef, it, x, y){
 function dateTitleOf(dateStr){
   const t = todayStr();
   if(dateStr === addDays(t,1)) return "morgen";
+  if(dateStr === addDays(t,-1)) return "gisteren";
   if(dateStr === t) return "vandaag";
   return new Date(dateStr + "T12:00").toLocaleDateString("nl-NL", { weekday:"long", day:"numeric", month:"short" });
 }
@@ -1908,7 +1935,7 @@ function moveItem(srcRef, dstRef, itemId){
   const dst = dstRef.date
     ? CONFIG.DAY_PARTS.find(d=>d.key===dstRef.key).name + " · " + dateTitleOf(dstRef.date)
     : state.lists[dstRef.key].name;
-  offerUndo("Verplaatst naar " + dst);
+  offerUndo("Verplaatst: '" + (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text) + "' → " + dst);
 }
 
 /* ============================================================
@@ -2008,6 +2035,8 @@ function openListModal(key){
   const l = state.lists[key] || {};
   document.getElementById("listdTitle").textContent = "Lijst — " + (t ? t.name : key);
   document.getElementById("listdName").value = t ? t.name : "";
+  for(const [id, val] of [["listdScopeB","b"],["listdScopeP","p"],["listdScopeW","w"]])
+    document.getElementById(id).classList.toggle("on", val === (l.scope || "b"));
   const box = document.getElementById("listdColors");
   box.innerHTML = "";
   for(const c of CONFIG.TOPIC_COLORS){
@@ -2044,6 +2073,18 @@ function listdMove(dir){
   saveLocal(); render(); openListModal(listdKey);
 }
 document.getElementById("listdOk").onclick = listdSave;
+/* lijst-modus (werk/privé) in de lijst-dialoog: direct toegepast én meegesynct */
+for(const [id, val] of [["listdScopeB","b"],["listdScopeP","p"],["listdScopeW","w"]])
+  document.getElementById(id).onclick = () => {
+    if(!listdKey) return;
+    const l = state.lists[listdKey]; if(!l) return;
+    if((l.scope || "b") !== val){
+      l.scope = val;
+      clog("Lijst-modus: '" + l.name + "' → " + (val === "p" ? "privé" : val === "w" ? "werk" : "beide"));
+      markDirty(listdKey); saveLocal(); render();
+    }
+    openListModal(listdKey);
+  };
 document.getElementById("listdUp").onclick = () => listdMove(-1);
 document.getElementById("listdDown").onclick = () => listdMove(1);
 document.getElementById("listdName").onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); listdSave(); } };
@@ -2176,6 +2217,6 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
 if("serviceWorker" in navigator && location.protocol === "https:")
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="AlYHfebDo6KaXBtltCpamQ==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="hC3idfu1Jgitmrveb2n92g==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
