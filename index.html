@@ -107,7 +107,10 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .col.collapsed h2{margin:0;cursor:pointer}
 .col.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
 .col.wdimlist{opacity:.55}
-.col h2{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.col h2{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:4px}
+/* lange titels inkorten i.p.v. de knoppen uit de kolom duwen */
+.col h2 .ttl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto}
+.col h2 .ttl:hover{cursor:pointer}
 /* kop: inhoud (icoon of titel) links, knoppen rechts; plus-knop helemaal rechts */
 .col h2 .hfill{flex:1}
 .col h2 .av{width:20px;height:20px;border-radius:50%;background:var(--c,var(--line));color:#fff;
@@ -408,7 +411,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.17.0";
+const VERSION = "0.17.1";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -1184,8 +1187,10 @@ function confirmAddTopic(){
   const id = uid(), key = listKey(id);
   const eigen = state.topics.filter(t => !CONFIG.STANDARD_TOPICS.some(s => s.id === t.id)).length;
   const color = CONFIG.TOPIC_COLORS[eigen % CONFIG.TOPIC_COLORS.length];
+  // nieuwe lijst erft de huidige modus: privé-modus → privé, werk-modus → werk, alles → beide
+  const nscope = (scopeFilter === "p" || scopeFilter === "w") ? scopeFilter : "b";
   state.topics.push({ id, name, color });
-  state.lists[key] = { name, color, items: [] };
+  state.lists[key] = { name, color, items: [], scope: nscope };
   openLists.add(key); activeTopic = key;
   pushUndo(() => {                        // hele lijst weer weghalen
     state.topics = state.topics.filter(t => t.id !== id);
@@ -1245,6 +1250,12 @@ function renderBoard(){
     if(st.id === "dates" && (window.innerWidth || 1024) <= 640) continue;   // mobiel: dates zit in de lade
     const k = listKey(st.id);
     if(listHidden(k)) continue;                     // boodschappen (privé) in werkmodus: geen kolom
+    // werkmodus (desktop): dates helemaal rechts als 5e kolom — boodschappen valt weg
+    if(st.id === "dates" && scopeFilter === "w" && (window.innerWidth || 1024) > 640){
+      const dcol = makeColumn({ date: null, key: k }, state.lists[k]);
+      lanes[NL - 1].appendChild(dcol); lanes[NL - 1].classList.add("wide");
+      continue;
+    }
     const lane = lanes[li % NL];
     put(makeColumn({ date: null, key: k }, state.lists[k]));
     if(st.id === "dates") lane.classList.add("wide");   // desktop: 5e kolom wat breder
@@ -1328,6 +1339,7 @@ function makeColumn(ref, list){
     av.onclick = () => openListModal(ref.key);
     h.appendChild(av);
     const ttl = document.createElement("span");
+    ttl.className = "ttl";
     ttl.textContent = (icon ? icon + " " : "") + nm;
     if(!collapsed){
       ttl.style.cursor = "pointer"; ttl.title = "Tik: naam, kleur en volgorde aanpassen";
@@ -2217,6 +2229,6 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
 if("serviceWorker" in navigator && location.protocol === "https:")
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="hC3idfu1Jgitmrveb2n92g==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="mehZyIxIeBexfL2VR40U8A==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
