@@ -152,9 +152,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 /* afvink-hokje in dezelfde strakke lijnstijl als de rest (geen standaard-checkbox) */
 .item input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;flex:none;cursor:pointer;
   border:2px solid var(--muted);border-radius:7px;background:none;position:relative;margin:0;transition:border-color .15s,background .15s}
-.item input[type=checkbox]:checked{border-color:var(--check);background:var(--check)}
+.item input[type=checkbox]:checked{border-color:var(--check);background:none}
 .item input[type=checkbox]:checked::after{content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;
-  border:solid #fff;border-width:0 2.2px 2.2px 0;transform:rotate(45deg)}
+  border:solid var(--check);border-width:0 2.2px 2.2px 0;transform:rotate(45deg)}
 .item input[type=checkbox]:active{transform:scale(.9)}
 /* kleine ronde knoppen met lijn-iconen (Material-stijl) */
 .kbtn{border:none;background:none;cursor:pointer;color:var(--muted);opacity:.6;
@@ -411,7 +411,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.17.1";
+const VERSION = "0.18.1";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -637,7 +637,7 @@ function initGIS(){
       try{ window.focus(); }catch(e){}     // na het Google-venster: terug naar dít tabblad/PWA
       updateMenuAuth();
       toast(user ? "Ingelogd als " + user + " — sync met Drive" : "Ingelogd");
-      pull(true);
+      await pull(true);   // eerst server binnenhalen (dán pas weten we wat er echt staat)
       pushDirty();
       updateSyncBar();
     }
@@ -878,6 +878,10 @@ async function pushDirty(){
     // een ander apparaat ondertussen heeft toegevoegd (outer join, niets gaat verloren)
     let srvFiles = null;
     try{ srvFiles = (await api("getAll")).files || {}; }catch(e){ srvFiles = null; }
+    // server-kopie ophalen mislukt → push AFBLAZEN: zonder merge zouden we de
+    // Drive-bestanden blind overschrijven met onze (mogelijk lege) lokale kopie.
+    // Keys blijven dirty, de backoff-timer probeert het zo weer.
+    if(!srvFiles && keys.length) throw new Error("server-kopie ophalen mislukt — push uitgesteld");
     let flushed = false;
     for(const k of keys){
       if(k !== "meta"){
@@ -997,21 +1001,34 @@ async function pull(force){
         }
       }
     }
-    if(changed){ render(); updateSyncBar("gesynchroniseerd"); log("Pull oké: wijzigingen van server overgenomen"); }
+    if(changed){ render(); log("Pull oké: wijzigingen van server overgenomen"); }
+    // eerlijke status: na een mislukte pull (of de allereerste sync) wordt de balk
+    // pas weer groen ná een geslaagde pull — ook als er niets veranderde
+    if(changed || !lastPullOk) updateSyncBar("gesynchroniseerd");
+    lastPullOk = true;
     // centrale log-regels die nog niet in Drive staan kunnen alleen mee met een put:
     // geen openstaande keys → meta even als dirty markeren, de volgende push spoelt ze weg
     if(accessToken && (state.clog || []).length && !dirtyKeys.size) markDirty("meta");
+    return true;
   }catch(e){
     const msg = (e && e.message) || "";
     log("Pull mislukt", e);
-    if(msg === "unauthorized"){ sessionExpired(); return; }
+    lastPullOk = false;
+    if(msg === "unauthorized"){ sessionExpired(); return false; }
     if(msg === "locked"){
       // rem actief: pulls ook even stoppen (anders blijven we elke 10 s aankloppen)
       syncPausedUntil = Math.max(syncPausedUntil, Date.now() + 120000);
       clog("Pull geweigerd: server rem actief — app wacht 2 min en probeert opnieuw");
-    } else if(msg === "verify-error"){
-      clog("Pull mislukt: Google-verificatie tijdelijk onbereikbaar — probeert zo opnieuw");
+      updateSyncBar("pull geweigerd — server rem, over 2 min opnieuw");
+    } else if(msg.indexOf("verify-error") === 0){
+      const detail = msg.slice(12).replace(/^[:\s]+/, "").trim();
+      clog("Pull mislukt: Google-verificatie tijdelijk onbereikbaar" + (detail ? " (" + detail + ")" : "") + " — probeert zo opnieuw");
+      updateSyncBar("pull mislukt — Google-verificatie, probeert opnieuw");
+    } else {
+      clog("Pull mislukt: " + (msg || "onbekende fout") + " — probeert zo opnieuw");
+      updateSyncBar("pull mislukt — probeert opnieuw");
     }
+    return false;
   }
 }
 /* ---------- totaal sync: alles als dirty markeren, outer-join pushen, dan pullen ---------- */
@@ -1024,9 +1041,9 @@ async function fullSync(){
   saveLocal(); updateCloudDot(); updateSyncBar("syncing…");
   try{
     await pushDirty();
-    await pull(true);
-    updateSyncBar("gesynchroniseerd");
-    toast("Totaal sync klaar — alle apparaten gelijk");
+    const ok = await pull(true);
+    if(ok){ updateSyncBar("gesynchroniseerd"); toast("Totaal sync klaar — alle apparaten gelijk"); }
+    else{ updateSyncBar("pull mislukt — zie logboek"); toast("Totaal sync niet gelukt — pull mislukt, zie logboek"); }
   }catch(e){ updateSyncBar("sync mislukt — probeer opnieuw"); }
 }
 
@@ -1036,7 +1053,9 @@ function updateSyncBar(txt){
   if(!accessToken){ s.innerHTML = ""; return; }
   const now = new Date().toTimeString().slice(0,5);
   if(txt === "gesynchroniseerd") lastSyncTime = now;
-  let dot = "#22c55e", label = txt || (dirtyKeys.size ? "te synchroniseren" : "gesynchroniseerd");
+  let dot = "#22c55e", label = txt || (dirtyKeys.size ? "te synchroniseren" : (lastSyncTime ? "gesynchroniseerd" : "nog niet gesynchroniseerd"));
+  // nooit groen "gesynchroniseerd" tonen zonder één geslaagde sync: grijs tot de eerste pull/push lukt
+  if(!txt && !dirtyKeys.size && !lastSyncTime) dot = "#9ca3af";
   if(/mislukt|geblokkeerd/.test(label)) dot = "#ef4444";
   else if(label === "syncing…") dot = "#93c5fd";
   else if(!txt && dirtyKeys.size) dot = "#f59e0b";
@@ -1045,6 +1064,7 @@ function updateSyncBar(txt){
   updateCloudDot();
 }
 let lastSyncTime = "";
+let lastPullOk = false;   // werd de laatste pull geaccepteerd? pas dan mag de balk groen
 
 /* ============================================================
    Logging — console + in-app logboek (menu → 📋 Logboek)
@@ -1820,7 +1840,10 @@ function reorderItem(srcRef, dstRef, itemId, beforeId){
   const idx = srcArr.findIndex(x => x.id === itemId); if(idx < 0) return;
   const dstArr = refArr(dstRef); if(!dstArr) return;
   let di = beforeId ? dstArr.findIndex(x => x.id === beforeId) : -1;
-  const sameList = refKey(srcRef) === refKey(dstRef) && srcRef.date === dstRef.date;
+  /* zelfde lijst = zelfde dagdeel op zelfde dag — NIET hetzelfde sync-bestand:
+     middag → ochtend is één day:-file, maar wél een verplaatsing (anders zet de
+     merge het item vanuit de serverkopie terug → kopie in beide dagdelen) */
+  const sameList = refKey(srcRef) === refKey(dstRef) && srcRef.date === dstRef.date && srcRef.key === dstRef.key;
   if(sameList){
     if(di < 0) di = dstArr.length;       // geen doel: onderaan in eigen lijst
     else if(di > idx) di -= 1;           // eigen splice schuift de index op
@@ -1881,6 +1904,12 @@ function endTouchLift(e){
     const col = cur.hover.closest(".col");
     const dstRef = col && col.dataset.ref ? JSON.parse(col.dataset.ref) : cur.ref;
     reorderItem(cur.ref, dstRef, cur.itemId, cur.hover.dataset.id);
+  } else {
+    // losgelaten op lege kolomruimte: gewoon verplaatsen naar die kolom
+    const t = e && e.changedTouches && e.changedTouches[0];
+    const target = t && document.elementFromPoint ? document.elementFromPoint(t.clientX, t.clientY) : null;
+    const col = target && target.closest ? target.closest(".col") : null;
+    if(col && col.dataset.ref) moveItem(cur.ref, JSON.parse(col.dataset.ref), cur.itemId);
   }
 }
 
@@ -2229,6 +2258,6 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
 if("serviceWorker" in navigator && location.protocol === "https:")
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="mehZyIxIeBexfL2VR40U8A==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="M7UW2gt4ZrT3pAsQiTDETw==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
