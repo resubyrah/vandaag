@@ -50,16 +50,16 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .headermid{display:flex;align-items:center;justify-content:center;gap:2px;width:100%;min-width:0}
 .spacer{flex:1}
 .datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;padding:0 4px;min-width:0;overflow:hidden;flex:1}   /* vult de hele middenkolom: de onzichtbare dag-knoppen links/rechts zijn nu groot */
-.datebox h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.02em;line-height:1.15;
+.datebox h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.02em;line-height:1.15;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.datebox .date{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.datebox .date{color:var(--muted);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .navbtn{border:none;background:none;cursor:pointer;font-size:26px;color:var(--ink);
   padding:4px 12px;border-radius:12px;line-height:1;flex:none;font-weight:300}
 .navbtn:hover{background:var(--hover);color:var(--accent)}
 .navbtn:active{background:var(--hover)}
 /* pijltjes verborgen: de datum zelf is het navigatievlak (links eerder, rechts later) */
 #prevDay,#nextDay{display:none}
-#syncrow{position:sticky;top:54px;z-index:9;text-align:center;font-size:11px;color:var(--muted);
+#syncrow{position:sticky;top:54px;z-index:9;text-align:center;font-size:12px;color:var(--muted);
   padding:3px 0 0;background:var(--bg);min-height:0}
 #syncrow:not(:empty){min-height:15px}
 .iconbtn{border:none;background:none;cursor:pointer;font-size:20px;color:var(--muted);
@@ -107,7 +107,7 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .col.collapsed h2{margin:0;cursor:pointer}
 .col.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
 .col.wdimlist{opacity:.55}
-.col h2{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:4px}
+.col h2{margin:0 0 8px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:4px}
 /* lange titels inkorten i.p.v. de knoppen uit de kolom duwen */
 .col h2 .ttl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto}
 .col h2 .ttl:hover{cursor:pointer}
@@ -116,9 +116,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .col h2 .av{width:20px;height:20px;border-radius:50%;background:var(--c,var(--line));color:#fff;
   font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;
   text-transform:uppercase;line-height:1}
-.add input{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;background:var(--hover);color:var(--ink)}
+.add input{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:15px;background:var(--hover);color:var(--ink)}
 .add input:focus{outline:none;border-color:var(--accent);background:var(--card)}
-#itemdScope .btn,#listdScope .btn{flex:1;font-size:12px;padding:6px 4px;margin:0}
+#itemdScope .btn,#listdScope .btn{flex:1;font-size:13px;padding:6px 4px;margin:0}
 #itemdScope .btn.on,#listdScope .btn.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
 /* weekdag+datum in de Dates-lijst + gedimde werk-items in de alles-stand;
    item-tekst is klikbaar voor bewerken (potlood is weg) */
@@ -145,16 +145,17 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .xmark{border:none;background:none;cursor:pointer;color:var(--danger);flex:none;
   width:18px;height:18px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .xmark svg{width:15px;height:15px}
-.item .txt{flex:1;font-size:14px;word-break:break-word}
+.item .txt{flex:1;font-size:15px;word-break:break-word}
 /* terugkerend-icoontje (elke week) naast de tekst in de Dates-lijst */
 .item .rep{flex:none;display:inline-flex;color:var(--accent);opacity:.9}
 .item .rep svg{width:13px;height:13px}
 /* afvink-hokje in dezelfde strakke lijnstijl als de rest (geen standaard-checkbox) */
 .item input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;flex:none;cursor:pointer;
   border:2px solid var(--muted);border-radius:7px;background:none;position:relative;margin:0;transition:border-color .15s,background .15s}
-.item input[type=checkbox]:checked{border-color:var(--check);background:none}
+/* afgevinkt: zelfde strakke lijnstijl als de rest — géén groen, wit/inkt-lijn vinkje */
+.item input[type=checkbox]:checked{border-color:var(--muted);background:none}
 .item input[type=checkbox]:checked::after{content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;
-  border:solid var(--check);border-width:0 2.2px 2.2px 0;transform:rotate(45deg)}
+  border:solid var(--ink);border-width:0 2.2px 2.2px 0;transform:rotate(45deg)}
 .item input[type=checkbox]:active{transform:scale(.9)}
 /* kleine ronde knoppen met lijn-iconen (Material-stijl) */
 .kbtn{border:none;background:none;cursor:pointer;color:var(--muted);opacity:.6;
@@ -162,14 +163,14 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .kbtn svg{width:15px;height:15px;pointer-events:none}
 .kbtn:hover{opacity:1;background:var(--hover);color:var(--accent)}
 .kbtn.danger:hover{background:rgba(217,48,37,.12);color:var(--danger)}
-.empty{color:var(--muted);font-size:13px;text-align:center;padding:14px 0;font-style:italic;opacity:.6}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:14px 0;font-style:italic;opacity:.6}
 menu.move{position:fixed;z-index:50;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;
   box-shadow:0 8px 30px rgba(0,0,0,.2);padding:6px;min-width:190px;margin:0}
-menu.move button{display:block;width:100%;text-align:left;border:none;background:none;font-size:14px;color:var(--ink);
+menu.move button{display:block;width:100%;text-align:left;border:none;background:none;font-size:15px;color:var(--ink);
   padding:8px 10px;border-radius:10px;cursor:pointer;font-family:inherit}
 menu.move button:hover{background:var(--hover)}
 #status{position:fixed;bottom:16px;left:12px;right:12px;display:flex;gap:8px;justify-content:center;pointer-events:none}
-#status>div{background:#202124;color:#fff;font-size:12.5px;padding:7px 14px;border-radius:999px;
+#status>div{background:#202124;color:#fff;font-size:13.5px;padding:7px 14px;border-radius:999px;
   opacity:0;transition:.3s;display:flex;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 #status>div.show{opacity:.94}
 #status button{border:none;background:rgba(255,255,255,.18);color:#fff;border-radius:999px;
@@ -196,14 +197,17 @@ menu.move button:hover{background:var(--hover)}
 #undoBtn.show{display:flex}
 #undoBtn:active{transform:scale(.96)}
 dialog{border:none;border-radius:16px;padding:24px;max-width:420px;width:92vw;background:var(--card);color:var(--ink);
-  box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:80vh;display:none;flex-direction:column}
+  box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:80vh;display:none;flex-direction:column;position:relative}
+.dlgclose{position:absolute;top:12px;left:12px;width:32px;height:32px;border:none;background:none;color:var(--muted);
+  border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dlgclose:hover{background:var(--hover);color:var(--ink)}
 dialog[open]{display:flex}
 dialog::backdrop{background:rgba(15,23,42,.4)}
-dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:14px;margin:6px 0 14px;background:var(--hover);color:var(--ink)}
+dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:15px;margin:6px 0 14px;background:var(--hover);color:var(--ink)}
 dialog input[type=text]:focus{outline:none;border-color:var(--accent);background:var(--card)}
 dialog h3{margin:0 0 2px}
-dialog p{color:var(--muted);font-size:12.5px;margin:0 0 12px}
-.btn{border:none;border-radius:12px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;margin:0 4px;font-family:inherit}
+dialog p{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.btn{border:none;border-radius:12px;padding:11px 18px;font-size:15px;font-weight:600;cursor:pointer;margin:0 4px;font-family:inherit}
 .btn.pri{background:var(--accent);color:#fff}
 .btn.sec{background:var(--hover);color:var(--ink)}
 .btn svg{vertical-align:-3px;margin-right:6px}
@@ -242,6 +246,7 @@ dialog#logd{max-width:min(94vw,780px)}
     </div>
   </div>
   <div class="hdrright">
+    <button class="iconbtn" id="foldBtn" title="Lijsten inklappen"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="5.5" height="14" rx="1.5"/><rect x="9.75" y="5" width="5.5" height="9" rx="1.5"/><rect x="16" y="5" width="5.5" height="14" rx="1.5"/></svg></button>
     <button class="iconbtn" id="syncBtn" title="Sync"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .9-8.9A7 7 0 0 0 5 12.3 4 4 0 0 0 6.5 19h11Z"/></svg><span id="cloudDot"></span></button>
   </div>
 </header>
@@ -298,6 +303,7 @@ dialog#logd{max-width:min(94vw,780px)}
 </dialog>
 
 <dialog id="itemd">
+  <button class="dlgclose" id="itemdClose" title="Sluiten"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   <h3 id="itemdTitle">Nieuw item</h3>
   <div class="inrow">
     <input type="text" id="itemdInput" />
@@ -411,7 +417,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.18.1";
+const VERSION = "0.20.0";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -706,7 +712,7 @@ function updateCloudDot(){
   if(!dot || !sb) return;
   let c = "#dc2626", t = "Niet ingelogd — alles blijft lokaal op dit apparaat";
   if(accessToken){
-    if(dirtyKeys.size){ c = "#f59e0b"; t = "Ingelogd — nog te synchroniseren met Drive"; }
+    if(dirtyKeys.size){ c = "#60a5fa"; t = "Ingelogd — synchroniseren met Drive"; }
     else { c = "#16a34a"; t = "Ingelogd — alles gesynchroniseerd met Drive"; }
   } else if(dirtyKeys.size){
     t = "Niet ingelogd — " + dirtyKeys.size + " wijziging(en) wachten op sync";
@@ -767,6 +773,7 @@ async function api(action, key, data, logEntries){
    Optimistic syncing
    ============================================================ */
 const dirtyKeys = new Set();
+const SYNC_DEBOUNCE_S = 3;   // na een wijziging 3 s wachten op meer activiteit, dan pas pushen
 let pushTimer = null, retryTimer = null;
 let syncErrors = 0, syncPausedUntil = 0;   // backoff-teller en pauze na sync-fouten
 
@@ -792,9 +799,9 @@ function markDirty(key){
     if(!markDirty._hint){ markDirty._hint = true; toast("Lokaal bewaard — sync met Drive via ☰ → Inloggen"); }
     return;
   }
-  updateSyncBar("syncing…");
+  updateSyncBar("synchroniseren over " + SYNC_DEBOUNCE_S + " s");
   clearTimeout(pushTimer);
-  pushTimer = setTimeout(pushDirty, 5000);
+  pushTimer = setTimeout(pushDirty, SYNC_DEBOUNCE_S * 1000);
 }
 function payloadFor(k){
   if(k === "meta"){
@@ -873,6 +880,7 @@ async function pushDirty(){
   if(Date.now() < syncPausedUntil) return;      // backoff-pauze: de retry-timer neemt het later over
   const keys = [...dirtyKeys];
   if(syncErrors) log("Sync-hervatting: nieuwe poging (" + keys.length + " key(s), poging " + (syncErrors + 1) + ")");
+  updateSyncBar("synchroniseren…");
   try{
     // eerst server-kopieën ophalen en samenvoegen: nooit iets overschrijven dat
     // een ander apparaat ondertussen heeft toegevoegd (outer join, niets gaat verloren)
@@ -1038,7 +1046,7 @@ async function fullSync(){
   for(const d of Object.keys(state.days)) if(state.days[d]) dirtyKeys.add("day:" + d);
   for(const k of Object.keys(state.lists)) if(state.lists[k]) dirtyKeys.add(k);
   if(Object.keys(state.removedTopics || {}).length) dirtyKeys.add("meta");   // verwijderde lijsten doorgeven
-  saveLocal(); updateCloudDot(); updateSyncBar("syncing…");
+  saveLocal(); updateCloudDot(); updateSyncBar("synchroniseren…");
   try{
     await pushDirty();
     const ok = await pull(true);
@@ -1053,14 +1061,15 @@ function updateSyncBar(txt){
   if(!accessToken){ s.innerHTML = ""; return; }
   const now = new Date().toTimeString().slice(0,5);
   if(txt === "gesynchroniseerd") lastSyncTime = now;
-  let dot = "#22c55e", label = txt || (dirtyKeys.size ? "te synchroniseren" : (lastSyncTime ? "gesynchroniseerd" : "nog niet gesynchroniseerd"));
+  let dot = "#22c55e", label = txt || (dirtyKeys.size ? "synchroniseren over " + SYNC_DEBOUNCE_S + " s" : (lastSyncTime ? "gesynchroniseerd" : "nog niet gesynchroniseerd"));
   // nooit groen "gesynchroniseerd" tonen zonder één geslaagde sync: grijs tot de eerste pull/push lukt
   if(!txt && !dirtyKeys.size && !lastSyncTime) dot = "#9ca3af";
+  const syncing = label.indexOf("synchroniseren") === 0 || label === "syncing…";   // synchroniseren = normaal proces → blauw, geen alarmoranje
   if(/mislukt|geblokkeerd/.test(label)) dot = "#ef4444";
-  else if(label === "syncing…") dot = "#93c5fd";
-  else if(!txt && dirtyKeys.size) dot = "#f59e0b";
-  s.innerHTML = '<span class="sdot" style="background:' + dot + '"></span>' + label
-    + (lastSyncTime ? " · " + lastSyncTime : "");
+  else if(syncing) dot = "#60a5fa";
+  s.innerHTML = '<span class="sdot" style="background:' + dot + '"></span>'
+    + '<span style="color:' + (syncing ? "#3b82f6" : "var(--muted)") + '">' + label
+    + (lastSyncTime ? " · " + lastSyncTime : "") + "</span>";
   updateCloudDot();
 }
 let lastSyncTime = "";
@@ -1075,7 +1084,7 @@ function log(msg, err){
     + (err ? "  ⚠ " + (err && err.message ? err.message : JSON.stringify(err)) : "");
   state.log = state.log || [];
   state.log.push(line);
-  if(state.log.length > 100) state.log.shift();
+  if(state.log.length > 300) state.log.shift();   // ruim genoeg voor een paar weken lokaal log
   if(err) console.error("[vandaag] " + msg, err);
   else console.log("[vandaag] " + msg);
 }
@@ -1192,6 +1201,38 @@ function toggleList(key){
     if(key.startsWith("topic:")) activeTopic = key;
   }
   render();
+}
+/* ---------- inklap-toggle naast het wolkje: standaard open → alles open → alles dicht ---------- */
+let viewFold = "std";
+try{ viewFold = localStorage.getItem("vandaag_fold") || "std"; }catch(e){}
+function applyFold(mode){
+  viewFold = (mode === "all" || mode === "none") ? mode : "std";
+  openLists.clear();
+  if(viewFold !== "none"){
+    for(const d of DAY_KEYS) openLists.add(d);
+    for(const st of CONFIG.STANDARD_TOPICS) openLists.add(listKey(st.id));
+  }
+  if(viewFold === "all") for(const t of state.topics) openLists.add(listKey(t.id));
+  try{ localStorage.setItem("vandaag_fold", viewFold); }catch(e){}
+  updateFoldBtn(); saveLocal(); render();
+}
+function updateFoldBtn(){
+  const b = document.getElementById("foldBtn");
+  if(!b) return;
+  const names = { std:"standaardlijsten open", all:"alles open", none:"alles ingeklapt" };
+  b.title = "Lijsten: " + names[viewFold] + " — tik voor: standaard open → alles open → alles dicht";
+}
+/* sleep de kop van een eigen lijst op een andere lijst-kolom: van kolom wisselen
+   (standaardlijsten hebben een vaste plek; alleen eigen lijsten verhuizen) */
+function reorderColumns(srcKey, dstKey){
+  if(srcKey === dstKey) return;
+  const keys = state.topics.map(t => listKey(t.id));
+  const si = keys.indexOf(srcKey), di = keys.indexOf(dstKey);
+  if(si < 0 || di < 0) return;                       // dagdelen/standaard: vaste plek
+  const t = state.topics.splice(si, 1)[0];
+  state.topics.splice(di, 0, t);
+  clog("Lijst verplaatst: '" + (t.name || "?") + "' naar de plek van " + (state.lists[dstKey] ? state.lists[dstKey].name : dstKey));
+  saveLocal(); render();
 }
 function addTopic(){
   const d = document.getElementById("newlist");
@@ -1362,10 +1403,16 @@ function makeColumn(ref, list){
     ttl.className = "ttl";
     ttl.textContent = (icon ? icon + " " : "") + nm;
     if(!collapsed){
-      ttl.style.cursor = "pointer"; ttl.title = "Tik: naam, kleur en volgorde aanpassen";
+      ttl.style.cursor = "pointer"; ttl.title = "Tik: naam, kleur en volgorde aanpassen — of sleep de kop naar een andere kolom";
       ttl.onclick = () => openListModal(ref.key);
     }
     h.appendChild(ttl);
+    // sleep de kop = hele lijst verplaatsen naar de plek van een andere eigen lijst
+    h.draggable = true;
+    h.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", "list|" + ref.key);
+      e.dataTransfer.effectAllowed = "move";
+    });
   }
   if(collapsed){
     // stub: open-teller + tik op de kop = weer openen
@@ -1576,6 +1623,68 @@ function assumeYear(month, day){
   return cand < today0 ? n.getFullYear() + 1 : n.getFullYear();
 }
 const MONTHS_NL = { jan:1, feb:2, mrt:3, maa:3, apr:4, mei:5, jun:6, jul:7, aug:8, sep:9, okt:10, nov:11, dec:12 };
+/* ============================================================
+   Feestdagen & schoolvakanties (regio Midden) in de dates-lijst
+   — officiële feestdagen: berekend (Pasen → paas- Familie)
+   — vakanties: rijksoverheid-adviesdata regio Midden (hard gecodeerd,
+     bij nieuw schooljaar de tabel aanvullen)
+   items zijn scope "b" (zichtbaar in privé én werk) + gedimd (fest)
+   ============================================================ */
+function easterSD(y){   // Pasen [maand, dag] — anonymous gregoriaans algoritme
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),
+        g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,
+        l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+  return [Math.floor((h+l-7*m+114)/31), ((h+l-7*m+114)%31)+1];
+}
+const isoOf = (y,m,d) => y + "-" + String(m).padStart(2,"0") + "-" + String(d).padStart(2,"0");
+const isoPlus = (iso,days) => { const dt = new Date(iso + "T00:00"); dt.setDate(dt.getDate()+days); return isoOf(dt.getFullYear(), dt.getMonth()+1, dt.getDate()); };
+const ddmmyyyy = iso => { const [y,m,d] = iso.split("-"); return d + "-" + m + "-" + y; };
+/* officiële feestdagen per jaar (datum, label) */
+function festDaysFor(y){
+  const easter = isoOf(y, easterSD(y)[0], easterSD(y)[1]);
+  return [
+    [isoOf(y,1,1),   "nieuwjaarsdag"],
+    [isoPlus(easter,1), "2e paasdag"],
+    [isoOf(y,4,27),  "koningsdag"],
+    [isoOf(y,5,5),   "bevrijdingsdag"],
+    [isoPlus(easter,39), "hemelvaartsdag"],
+    [isoPlus(easter,50), "2e pinksterdag"],
+    [isoOf(y,12,25), "1e kerstdag"],
+    [isoOf(y,12,26), "2e kerstdag"]
+  ];
+}
+/* schoolvakanties regio Midden (rijksoverheid): startsleutel → itemtekst;
+   bij een nieuw schooljaar: tabel aanvullen met de dan bekende data */
+const VAK_MIDDEN = {
+  "2026-12-19": "19-12-2026 t/m 03-01-2027 kerstvakantie",
+  "2027-02-20": "20-02-2027 t/m 28-02-2027 voorjaarsvakantie",
+  "2027-04-24": "24-04-2027 t/m 02-05-2027 meivakantie",
+  "2027-07-17": "17-07-2027 t/m 29-08-2027 zomervakantie",
+  "2027-10-16": "16-10-2027 t/m 24-10-2027 herfstvakantie",
+  "2027-12-25": "25-12-2027 t/m 09-01-2028 kerstvakantie"
+};
+function ensureFest(){
+  const k = listKey("dates");
+  if(!state.lists[k]) return 0;
+  const items = state.lists[k].items = state.lists[k].items || [];
+  const have = new Set(items.map(i => i.id));
+  const gone = tomb[k] || {};                       // door de gebruiker verwijderd: niet terugzetten
+  const today0 = todayStr();
+  let added = 0;
+  const add = (id, iso, text) => {                  // iso < vandaag: overslaan (verleden hoort niet in de lijst)
+    if(iso < today0 || have.has(id) || gone[id]) return;
+    items.push({ id, text, done:false, doneAt:null, created: nowISO(), rev: nowISO(), scope:"b", fest:true });
+    have.add(id); added++;
+  };
+  const y = new Date().getFullYear();
+  for(const yy of [y, y+1]){
+    const slug = s => s.replace(/[^a-z0-9]+/gi,"-").toLowerCase();
+    for(const [iso,label] of festDaysFor(yy)) add("fest-"+iso+"-"+slug(label), iso, ddmmyyyy(iso) + " " + label);
+  }
+  for(const iso of Object.keys(VAK_MIDDEN)) add("vak-"+iso, iso, VAK_MIDDEN[iso]);
+  if(added){ clog("Feestdagen & schoolvakanties (regio Midden) toegevoegd: " + added + " date(s)"); render(); markDirty(k); }
+  return added;
+}
 /* datum in een itemtekst vervangen door een nieuwe (dd-mm) — voor terugkerende items;
    de tijd en verdere tekst blijven staan */
 function replaceDateInText(text, d){
@@ -1634,7 +1743,9 @@ function finishCol(col, ref){
   col.addEventListener("dragleave", () => col.classList.remove("drag-over"));
   col.addEventListener("drop", e => {
     e.preventDefault(); col.classList.remove("drag-over");
-    const [date, srcKey, itemId] = e.dataTransfer.getData("text/plain").split("|");
+    const raw = e.dataTransfer.getData("text/plain") || "";
+    if(raw.indexOf("list|") === 0){ reorderColumns(raw.slice(5), ref.key); return; }   // kop-gesleepte lijst
+    const [date, srcKey, itemId] = raw.split("|");
     moveItem({ date: date || null, key: srcKey }, ref, itemId);
   });
   return col;
@@ -1655,7 +1766,7 @@ function openItemModal(ref, it){
   wk.classList.toggle("on", !!(it && it.weekly));
   document.getElementById("itemdMove").hidden = !it;
   document.getElementById("itemdDel").hidden = !it;
-  document.getElementById("scopeB").hidden = !!it;   // "beide" alleen bij nieuw: bij bewerken kies je privé of werk
+  document.getElementById("scopeB").hidden = false;  // "beide" ook bij bewerken: bv. een dates-item (vakantie) geldt voor privé én werk
   document.getElementById("itemdPlus").hidden = !!it;   // ＋ alleen bij nieuw: hele lijst invoeren
   updateScopeChips();
   document.getElementById("itemd").showModal();
@@ -1729,7 +1840,9 @@ function addItem(ref, value, scope){
   items.push(it);
   pushUndo(() => { refArr(ref).splice(refArr(ref).findIndex(x => x.id === it.id), 1); saveLocal(); }, [refKey(ref)]);
   render(); markDirty(refKey(ref));
-  offerUndo("Toegevoegd: " + (v.length > 24 ? v.slice(0,24) + "…" : v));
+  const vlabel = (v.length > 24 ? v.slice(0,24) + "…" : v);
+  offerUndo("Toegevoegd: " + vlabel);
+  clog("Toegevoegd: '" + vlabel + "' → " + listTitle(ref));
 }
 function deleteItem(ref, it){
   const items = refArr(ref);
@@ -1741,7 +1854,9 @@ function deleteItem(ref, it){
     refArr(ref).splice(Math.min(idx, refArr(ref).length), 0, it); saveLocal();
   }, [refKey(ref)]);
   render(); markDirty(refKey(ref));
-  offerUndo("Verwijderd: " + (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text));
+  const dlabel = (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text);
+  offerUndo("Verwijderd: " + dlabel);
+  clog("Verwijderd: '" + dlabel + "' uit " + listTitle(ref));
 }
 function toggleItem(ref, it, done){
   const old = { done: it.done, doneAt: it.doneAt };
@@ -1752,6 +1867,7 @@ function toggleItem(ref, it, done){
   render(); markDirty(refKey(ref));
   const label = (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text);
   offerUndo(done ? "Afgevinkt: " + label : "Afvink-uit: " + label);
+  clog((done ? "Afgevinkt: '" : "Afvink-uit: '") + label + "' (" + listTitle(ref) + ")");
 }
 function editText(ref, it){ openItemModal(ref, it); }
 
@@ -1765,7 +1881,7 @@ function makeItem(ref, it){
   const marked = delMarked.has(it.id);
   const el = document.createElement("div");
   el.className = "item" + (it.done ? " done" : "") + (marked ? " dmark" : "")
-    + (scopeFilter === "b" && it.scope === "w" ? " wdim" : "");   // alles-stand: werk-items dimmen
+    + (it.fest || (scopeFilter === "b" && it.scope === "w") ? " wdim" : "");   // feestdagen/vakanties altijd gedimd, werk-items alleen in alles-stand
   el.draggable = true;
   el.dataset.id = it.id;
   if(marked){
@@ -1803,7 +1919,9 @@ function makeItem(ref, it){
   el.addEventListener("dragover", e => e.preventDefault());
   el.addEventListener("drop", e => {
     e.preventDefault(); e.stopPropagation(); clearDragOver();
-    const [date, srcKey, itemId] = e.dataTransfer.getData("text/plain").split("|");
+    const raw = e.dataTransfer.getData("text/plain") || "";
+    if(raw.indexOf("list|") === 0) return;             // lijst-hoofden horen hier niet
+    const [date, srcKey, itemId] = raw.split("|");
     reorderItem({ date: date || null, key: srcKey }, ref, itemId, it.id);
   });
   el.addEventListener("dragend", clearDragOver);   // sleep je buiten alle kaarten, dan is de hint ook weg
@@ -2003,6 +2121,9 @@ document.getElementById("menuDev").onclick = () => {
 };
 document.getElementById("menuTheme").onclick = () => cycleTheme();
 document.getElementById("scopeBtn").onclick = () => setScope(scopeFilter === "b" ? "p" : scopeFilter === "p" ? "w" : "b");
+document.getElementById("foldBtn").onclick = () =>
+  applyFold(viewFold === "std" ? "all" : viewFold === "all" ? "none" : "std");
+updateFoldBtn();
 document.getElementById("devOk").onclick = () => {
   const v = document.getElementById("devName").value.trim();
   if(v){ try{ localStorage.setItem("vandaag_devname", v); }catch(e){} }
@@ -2048,6 +2169,7 @@ document.getElementById("fabBoodschap").onclick = () => {
 document.getElementById("fabList").onclick = () => { document.getElementById("fabd").close(); addTopic(); };
 document.getElementById("undoBtn").onclick = doUndo;
 document.getElementById("newlistOk").onclick = confirmAddTopic;
+document.getElementById("itemdClose").onclick = () => { itemdCtx = null; document.getElementById("itemd").close(); };
 document.getElementById("newlistName").onkeydown = e => { if(e.key === "Enter") confirmAddTopic(); };
 document.getElementById("itemdPlus").onclick = itemdAddAnother;
 /* verlaat je het invoerveld, dan slaat het venster vanzelf op en sluit —
@@ -2221,6 +2343,7 @@ cleanupBoodschappen();
 carryOpenItems();
 processDates();
 setScope(scopeFilter, true);   // menu-knop-label syncen met bewaarde filter
+ensureFest();                    // feestdagen & schoolvakanties (regio Midden) vullen/aanzetten
 log("App gestart — v" + VERSION + " (" + location.origin + ") · apparaat: " + deviceId());
 clog("App gestart v" + VERSION);   // apparaat was actief — ook zichtbaar als de sync pas later lukt
 render();
@@ -2258,6 +2381,6 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
 if("serviceWorker" in navigator && location.protocol === "https:")
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="M7UW2gt4ZrT3pAsQiTDETw==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="fC/PiKHL0HEXC9B8wCQAZw==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
