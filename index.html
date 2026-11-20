@@ -62,6 +62,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 #syncrow{position:sticky;top:54px;z-index:9;text-align:center;font-size:12px;color:var(--muted);
   padding:3px 0 0;background:var(--bg);min-height:0}
 #syncrow:not(:empty){min-height:15px}
+#foldBtn{display:inline-flex;align-items:center;gap:1px}
+#foldBtn .f3{display:inline-flex;opacity:.35}
+#foldBtn .f3.on{opacity:1}
 .iconbtn{border:none;background:none;cursor:pointer;font-size:20px;color:var(--muted);
   padding:6px 9px;border-radius:10px;line-height:1;flex:none}
 .iconbtn:hover{background:var(--hover);color:var(--accent)}
@@ -246,7 +249,7 @@ dialog#logd{max-width:min(94vw,780px)}
     </div>
   </div>
   <div class="hdrright">
-    <button class="iconbtn" id="foldBtn" title="Lijsten inklappen"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="5.5" height="14" rx="1.5"/><rect x="9.75" y="5" width="5.5" height="9" rx="1.5"/><rect x="16" y="5" width="5.5" height="14" rx="1.5"/></svg></button>
+    <button class="iconbtn" id="foldBtn" title="Lijsten inklappen"></button>
     <button class="iconbtn" id="syncBtn" title="Sync"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .9-8.9A7 7 0 0 0 5 12.3 4 4 0 0 0 6.5 19h11Z"/></svg><span id="cloudDot"></span></button>
   </div>
 </header>
@@ -417,7 +420,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.20.0";
+const VERSION = "0.21.0";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -1216,11 +1219,20 @@ function applyFold(mode){
   try{ localStorage.setItem("vandaag_fold", viewFold); }catch(e){}
   updateFoldBtn(); saveLocal(); render();
 }
+/* inklap-toggle: drie icoontjes (standaard / alles open / alles dicht) — de actieve is vol,
+   de andere gedimd; tikt door de standen alsof je op één knop tikt */
+const FOLD_ICONS = {
+  std: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="4.6" height="12" rx="1.4"/><rect x="9.7" y="6" width="4.6" height="7.5" rx="1.4"/><rect x="15.4" y="6" width="4.6" height="12" rx="1.4"/></svg>',
+  all: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="4.6" height="14" rx="1.4"/><rect x="9.7" y="5" width="4.6" height="14" rx="1.4"/><rect x="15.4" y="5" width="4.6" height="14" rx="1.4"/></svg>',
+  none: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9.5" width="4.6" height="5" rx="1.4"/><rect x="9.7" y="9.5" width="4.6" height="5" rx="1.4"/><rect x="15.4" y="9.5" width="4.6" height="5" rx="1.4"/></svg>'
+};
 function updateFoldBtn(){
   const b = document.getElementById("foldBtn");
   if(!b) return;
   const names = { std:"standaardlijsten open", all:"alles open", none:"alles ingeklapt" };
   b.title = "Lijsten: " + names[viewFold] + " — tik voor: standaard open → alles open → alles dicht";
+  b.innerHTML = ["std","all","none"].map(m =>
+    '<span class="f3' + (m === viewFold ? " on" : "") + '" title="' + names[m] + '">' + FOLD_ICONS[m] + '</span>').join("");
 }
 /* sleep de kop van een eigen lijst op een andere lijst-kolom: van kolom wisselen
    (standaardlijsten hebben een vaste plek; alleen eigen lijsten verhuizen) */
@@ -1462,7 +1474,7 @@ function makeColumn(ref, list){
 
   const box = document.createElement("div");
   box.className = "listbox";
-  const items = visibleItems(ref);
+  const items = visibleItems(ref, true);   // true: periode-items als twee regels tonen
   // afgevinkte items blijven op hun plek staan (dimmen zie je aan de stijl)
   for(const it of items)
     box.appendChild(makeItem(ref, it));
@@ -1550,6 +1562,29 @@ function stripDateFromText(text){
   const m = (text || "").match(/^\s*(?:\d{4}-\d{1,2}-\d{1,2}|\d{1,2}-\d{1,2}(?:-\d{2,4})?|\d{1,2}\s*(?:jan|feb|mrt|maa|apr|mei|jun|jul|aug|sep|okt|nov|dec)[a-z]*\.?(?:\s*\d{2,4})?)\s*(?::|-|–|—)?\s*/i);
   return ((m ? text.slice(m[0].length) : text) || "").trim() || (text || "").trim();
 }
+/* periode-items ("19-12-2026 t/m 03-01-2027 kerstvakantie"): in de dates-lijst als
+   twee regels tonen — dag 1 met "(dag 1 van x)" en op de einddatum "Einde …";
+   jaartal mag ontbreken (eind < begin = over jaarsgrens) */
+function rangeInfo(text){
+  if(!text) return null;
+  const m = String(text).match(/^(\d{1,2})-(\d{1,2})(?:-(\d{2,4}))?\s*t\/m\s*(\d{1,2})-(\d{1,2})(?:-(\d{2,4}))?\s+(.+)$/i);
+  if(!m || !m[7].trim()) return null;
+  const sy = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : assumeYear(+m[2], +m[1]);
+  const s = new Date(sy, +m[2] - 1, +m[1]);
+  let ey = m[6] ? (+m[6] < 100 ? 2000 + +m[6] : +m[6]) : null;
+  if(ey === null){
+    const e0 = new Date(sy, +m[5] - 1, +m[4]);
+    ey = e0 >= s ? sy : sy + 1;                    // 19-12 t/m 03-01 zonder jaar: einde in volgend jaar
+  }
+  const e = new Date(ey, +m[5] - 1, +m[4]);
+  const days = Math.round((e - s) / 864e5) + 1;    // inclusief begin én eind
+  if(days < 2) return null;
+  const startIso = isoOf(sy, +m[2], +m[1]), endIso = isoOf(ey, +m[5], +m[4]);
+  const name = m[7].trim();
+  return { startIso: startIso, endIso: endIso, days: days, name: name,
+           a: ddmmyyyy(startIso) + " " + name + " (dag 1 van " + days + ")",
+           b: ddmmyyyy(endIso) + " Einde " + name };
+}
 function processDates(){
   const today = todayStr();
   const k = listKey("dates");
@@ -1558,6 +1593,26 @@ function processDates(){
   let acted = 0;
   for(const it of items){
     if(it.done || !it.text) continue;
+    const r = it.weekly ? null : rangeInfo(it.text);
+    if(r){                                          // periode: dag 1 → "(dag 1 van x)", einddatum → "Einde …"
+      if(r.endIso < today){ it.done = true; it.doneAt = nowISO(); it.rev = nowISO();
+        markDirty(k); acted++; clog("Periode afgelopen — afgestreept: " + it.text); }
+      else if(r.startIso === today || r.endIso === today){
+        const t = it.text.match(/(\d{1,2}):(\d{2})/);
+        const key = !t ? "ochtend" : (+t[1] < 12 ? "ochtend" : +t[1] < 18 ? "middag" : "avond");
+        const dst = dayItems(today, key);
+        const cid = "date-" + it.id;                // vast id: geen dubbele kopie
+        if(dst.some(x => x.id === cid)) continue;   // al gekopieerd
+        if((tomb["day:" + today] || {})[cid]) continue;
+        const txt2 = r.startIso === today ? r.name + " (dag 1 van " + r.days + ")" : "Einde " + r.name;
+        dst.push({ id: cid, text: txt2, done: false, doneAt: null,
+                   created: nowISO(), rev: nowISO(), scope: it.scope || "b" });
+        markDirty("day:" + today); acted++;
+        const dp = CONFIG.DAY_PARTS.find(p => p.key === key);
+        clog("Date vandaag → gekopieerd naar " + (dp ? dp.name : key) + ": " + txt2);
+      }
+      continue;
+    }
     const d = dateOfText(it.text);
     if(!d) continue;
     const ds = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -1716,11 +1771,21 @@ function dateSortKey(text){
   if(m){ const mo = MONTHS_NL[m[2].toLowerCase()]; const y = m[3] ? ((+m[3] < 100 ? 2000 + +m[3] : +m[3])) : assumeYear(mo, +m[1]); return y * 10000 + mo * 100 + +m[1]; }
   return null;                                                            // geen datum gevonden
 }
-function visibleItems(ref){
+function visibleItems(ref, expand){
   let items = refArr(ref);
   if(scopeFilter !== "b")
     items = items.filter(it => (it.scope || "b") !== (scopeFilter === "p" ? "w" : "p"));
-  if(ref.key === listKey("dates"))
+  if(ref.key === listKey("dates")){
+    if(expand){
+      const ex = [];                                // periode-item → twee regels: dag 1 + "Einde …"
+      for(const it of items){
+        const r = it.weekly ? null : rangeInfo(it.text);
+        if(r){ ex.push(Object.assign({}, it, { text: r.a, __src: it }),
+                      Object.assign({}, it, { text: r.b, __src: it })); }
+        else ex.push(it);
+      }
+      items = ex;
+    }
     items = items.slice().sort((a, b) => {          // dates: op volgorde van de datum in de tekst,
       const ka = dateSortKey(a.text), kb = dateSortKey(b.text);   // en op dezelfde dag: oplopend op tijd
       if(ka != null && kb != null){
@@ -1733,6 +1798,7 @@ function visibleItems(ref){
       if(kb != null) return 1;
       return String(a.created || "").localeCompare(String(b.created || ""));
     });
+  }
   if(hideDone[ref.key]) return items.filter(it => !it.done);
   if(ref.key === listKey("boodschappen") && viewDate > todayStr())
     return items.filter(it => !it.done);
@@ -1878,6 +1944,7 @@ function clearDragOver(){
   document.querySelectorAll(".col.drag-over").forEach(c => c.classList.remove("drag-over"));
 }
 function makeItem(ref, it){
+  const baseIt = it.__src || it;   // periode-regel? kloon: tik/vink/prullenbak gaan naar het echte item
   const marked = delMarked.has(it.id);
   const el = document.createElement("div");
   el.className = "item" + (it.done ? " done" : "") + (marked ? " dmark" : "")
@@ -1893,7 +1960,7 @@ function makeItem(ref, it){
     el.append(x);
   } else {
     const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = it.done;
-    cb.onchange = () => toggleItem(ref, it, cb.checked);
+    cb.onchange = () => toggleItem(ref, baseIt, cb.checked);
     el.append(cb);
   }
   const isDates = ref.key === listKey("dates");
@@ -1901,7 +1968,7 @@ function makeItem(ref, it){
   const showTxt = cap((isDates && ddate && stripDateFromText(it.text)) || it.text);
   const txt = document.createElement("span"); txt.className = "txt"; txt.textContent = showTxt;
   txt.title = "Tik: aanpassen";
-  txt.onclick = () => openItemModal(ref, it);   // tik op de tekst = bewerken; verslepen blijft vasthouden/slepen
+  txt.onclick = () => openItemModal(ref, baseIt);   // tik op de tekst = bewerken (bij periode: het oorspronkelijke item)
   el.append(txt);
   if(isDates && ddate){
     const ds = String(ddate.getDate()).padStart(2, "0") + "-" + String(ddate.getMonth() + 1).padStart(2, "0");
@@ -1942,8 +2009,8 @@ function makeItem(ref, it){
   del.innerHTML = ICON.trash;
   del.onclick = (e) => {
     e.stopPropagation();
-    if(it.done){ delMarked.delete(it.id); deleteItem(ref, it); return; }   // al afgevinkt: direct verwijderen
-    if(delMarked.has(it.id)){ delMarked.delete(it.id); deleteItem(ref, it); }
+    if(it.done){ delMarked.delete(it.id); deleteItem(ref, baseIt); return; }   // al afgevinkt: direct verwijderen
+    if(delMarked.has(it.id)){ delMarked.delete(it.id); deleteItem(ref, baseIt); }
     else { delMarked.add(it.id); render(); toast("Nog een keer prullenbak tikken = definitief verwijderen"); }
   };
   if(rep) el.append(rep);
@@ -2381,6 +2448,5 @@ if(!CONFIG.CLIENT_ID.startsWith("JOUW_")){
 if("serviceWorker" in navigator && location.protocol === "https:")
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" nonce="fC/PiKHL0HEXC9B8wCQAZw==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
