@@ -82,9 +82,10 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 /* dates-baan op desktop iets breder: die items zijn meestal wat langer */
 .lane.wide{flex:1.35}
 /* maximaal: dates-baan dubbel zo breed, lijst zo hoog als nodig — scrollt bij lange lijsten */
-.lane.maxlane{flex:2.7}
-.col.colmax{align-self:stretch}
-.col.colmax .listbox{max-height:none}
+/* schermvullende lijst: paneel over het bord, onder de kop；lange lijsten scrollen vanzelf */
+.col.colbig{position:fixed;top:62px;left:10px;right:10px;bottom:10px;z-index:60;
+  max-width:1100px;margin:0 auto;box-shadow:0 24px 70px rgba(0,0,0,.28)}
+.col.colbig .listbox{max-height:none;flex:1}
 @media (max-width:640px){
   #board{gap:8px;padding:8px 6px 90px}
   .lane{gap:8px}
@@ -421,7 +422,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.24.0";
+const VERSION = "0.25.0";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -448,6 +449,7 @@ const ICON = {
   chevDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   chevUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>',
+  expand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 5 19 5 19 11"/><polyline points="11 19 5 19 5 13"/><line x1="19" y1="5" x2="13" y2="11"/><line x1="5" y1="19" x2="11" y2="13"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>',
   repeat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>',
   swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg>',
@@ -1141,7 +1143,19 @@ function showLog(){
 /* ============================================================
    UI — dagweergave, badges, kolommen
    ============================================================ */
-function render(){ renderBoard(); renderDate(); saveLocal(); }
+/* na het toevoegen/bewerken: het nieuwe item in beeld scrollen (lange lijsten!) */
+let focusItemId = null;
+function focusNewItem(){
+  const id = focusItemId; focusItemId = null; if(!id) return;
+  /* eerste item met dit id (dates-periodes staan er dubbel: dag 1 komt eerst) */
+  let el = null;
+  try{
+    const els = document.querySelectorAll('.item');
+    for(const c of els) if(c.dataset && c.dataset.id === id){ el = c; break; }
+  }catch(e){}
+  if(el && el.scrollIntoView) try{ el.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(e){}
+}
+function render(){ renderBoard(); renderDate(); saveLocal(); focusNewItem(); }
 
 function renderDate(){
   const d = new Date(viewDate + "T12:00");
@@ -1196,6 +1210,20 @@ function renderBadges(){
   el.style.display = el.children.length ? "flex" : "none";
 }
 
+/* schermvullende lijst (per lijst, per apparaat): derde stand van de inklap-knop —
+   open → schermvullend → ingeklapt; vast voor de header/onderkant van het scherm */
+let colMax = new Set();
+try{ colMax = new Set(JSON.parse(localStorage.getItem("vandaag_max") || "[]")); }catch(e){}
+function saveMax(){ try{ localStorage.setItem("vandaag_max", JSON.stringify([...colMax])); }catch(e){} }
+function cycleCol(key){
+  if(colMax.has(key)){                       // schermvullend → ingeklapt
+    colMax.delete(key); saveMax(); toggleList(key);
+  } else if(openLists.has(key)){            // open → schermvullend
+    colMax.add(key); saveMax(); render();
+  } else {                                   // ingeklapt → open
+    colMax.delete(key); saveMax(); toggleList(key);
+  }
+}
 function toggleList(key){
   if(openLists.has(key)){
     openLists.delete(key);
@@ -1208,15 +1236,15 @@ function toggleList(key){
 }
 /* ---------- inklap-toggle naast het wolkje: standaard open → alles open → alles dicht ---------- */
 let viewFold = "std";   // std = uitgeklapt, max = maximaal, none = ingeklapt
-try{ viewFold = localStorage.getItem("vandaag_fold") || "std"; if(viewFold === "all") viewFold = "max"; }catch(e){}
+try{ viewFold = localStorage.getItem("vandaag_fold") || "std"; if(viewFold === "max") viewFold = "all"; }catch(e){}
 function applyFold(mode){
-  if(mode === "all") mode = "max";              // oude waarde (vóór v0.24.0): maximaal
-  viewFold = (mode === "max" || mode === "none") ? mode : "std";
+  if(mode === "max") mode = "all";              // oude waarde (v0.24.0): alles open
+  viewFold = (mode === "all" || mode === "none") ? mode : "std";
   openLists.clear();
   if(viewFold === "std")                       // uitgeklapt: alleen de dagdelen, rest ingeklapt
     for(const d of DAY_KEYS) openLists.add(d);
-  if(viewFold === "max" || viewFold === "none") // ingeklapt/maximaal: alles open (max + breed), of alles dicht
-    if(viewFold === "max") for(const t of state.topics) openLists.add(listKey(t.id));
+  if(viewFold === "all")                       // alles open: dagdelen + boodschappen + dates + eigen
+    for(const t of state.topics) openLists.add(listKey(t.id));
   try{ localStorage.setItem("vandaag_fold", viewFold); }catch(e){}
   dropTitles();
 updateFoldBtn(); saveLocal(); render();
@@ -1226,7 +1254,7 @@ updateFoldBtn(); saveLocal(); render();
    zo hoog als de lijst) */
 const FOLD_ICONS = {
   std: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="4.5" height="14" rx="1.2"/><rect x="10" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="15" y="5" width="4.5" height="14" rx="1.2"/></svg>',
-  max: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="10" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="15" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/></svg>',
+  all: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="10" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="15" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/></svg>',
   none: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="4.5" height="14" rx="1.2"/><rect x="10" y="5" width="4.5" height="14" rx="1.2"/><rect x="15" y="5" width="4.5" height="14" rx="1.2"/></svg>'
 };
 /* geen hover-tooltips: de tekstjes blijven soms "plakken" en zijn niet nodig —
@@ -1244,8 +1272,8 @@ if(typeof MutationObserver !== "undefined"){
 function updateFoldBtn(){
   const b = document.getElementById("foldBtn");
   if(!b) return;
-  const names = { std:"uitgeklapt", max:"maximaal", none:"ingeklapt" };
-  b.title = "Lijsten: " + names[viewFold] + " — tik voor: uitgeklapt → maximaal → ingeklapt";
+  const names = { std:"uitgeklapt", all:"alles open", none:"ingeklapt" };
+  b.title = "Lijsten: " + names[viewFold] + " — tik voor: uitgeklapt → alles open → ingeklapt";
   b.innerHTML = FOLD_ICONS[viewFold] || FOLD_ICONS.std;
 }
 if(typeof MutationObserver !== "undefined"){
@@ -1352,27 +1380,20 @@ function renderBoard(){
     // werkmodus (desktop): dates helemaal rechts als 5e kolom — boodschappen valt weg
     if(st.id === "dates" && scopeFilter === "w" && (window.innerWidth || 1024) > 640){
       const dcol = makeColumn({ date: null, key: k }, state.lists[k]);
-      lanes[NL - 1].appendChild(dcol);
-      lanes[NL - 1].classList.add(viewFold === "max" ? "maxlane" : "wide");
-      if(viewFold === "max") dcol.classList.add("colmax");
+      lanes[NL - 1].appendChild(dcol); lanes[NL - 1].classList.add("wide");
       continue;
     }
     const lane = lanes[li % NL];
     const dcol2 = makeColumn({ date: null, key: k }, state.lists[k]);
     lane.appendChild(dcol2);
-    if(st.id === "dates"){                              // desktop: 5e kolom breder; maximaal: dubbel
-      lane.classList.add(viewFold === "max" ? "maxlane" : "wide");
-      if(viewFold === "max") dcol2.classList.add("colmax");
-    }
+    if(st.id === "dates") lane.classList.add("wide");   // desktop: 5e kolom wat breder
   }
   // mobiel: dates als vaste lade bovenaan — kop altijd in beeld, tik = groter/kleiner
   const drw = document.getElementById("datesDrawer");
   drw.innerHTML = "";
   if((window.innerWidth || 1024) <= 640){
     const k = listKey("dates");
-    const mcol = makeColumn({ date: null, key: k }, state.lists[k]);
-    if(viewFold === "max") mcol.classList.add("colmax");   // maximaal (mobiel): zo hoog als de lijst
-    drw.appendChild(mcol);
+    drw.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
   }
   // eigen lijsten: in de kortste baan — lege plek onder een korte vaste lijst vult zich vanzelf
   for(const t of state.topics){
@@ -1416,7 +1437,8 @@ function makeColumn(ref, list){
   const key = refKey(ref);
   const collapsed = !openLists.has(ref.key);   // ingeklapt: compacte stub, zelfde plek in de rij
   const col = document.createElement("section");
-  col.className = "col" + (collapsed ? " collapsed" : ""); col.dataset.key = key;
+  const isMax = colMax.has(ref.key) && openLists.has(ref.key);   // schermvullend = derde stand
+  col.className = "col" + (collapsed ? " collapsed" : "") + (isMax ? " colbig" : ""); col.dataset.key = key;
   col.dataset.ref = JSON.stringify(ref);   // voor sleepdoelen (touch-reorder)
   // kleurrijke identiteit zonder pastel-kaart: steelje in de kop krijgt de lijstkleur
   const st = CONFIG.STANDARD_TOPICS.find(s => listKey(s.id) === ref.key);
@@ -1478,9 +1500,10 @@ function makeColumn(ref, list){
   plus.className = "hbtn plus"; plus.innerHTML = ICON.plus; plus.title = "Nieuw item";
   plus.onclick = () => openItemModal(ref, null);
   const min = document.createElement("button");
-  min.className = "hbtn min"; min.innerHTML = collapsed ? ICON.chevDown : ICON.chevUp;
-  min.title = collapsed ? "Uitklappen" : "Inklappen — kaart blijft op z’n plek, alleen kleiner";
-  min.onclick = () => toggleList(ref.key);
+  min.className = "hbtn min" + (isMax ? " on" : "");
+  min.innerHTML = collapsed ? ICON.chevDown : (isMax ? ICON.expand : ICON.chevUp);
+  min.title = collapsed ? "Uitklappen" : isMax ? "Terug naar normaal formaat" : "Inklappen — of tik nóg een keer: schermvullend";
+  min.onclick = () => cycleCol(ref.key);
   h.appendChild(min);
   // oog: afgevinkte items van déze lijst verbergen (per lijst in te stellen)
   const eye = document.createElement("button");
@@ -1617,7 +1640,7 @@ function rangeInfo(text){
   const name = m[7].trim();
   return { startIso: startIso, endIso: endIso, days: days, name: name,
            a: ddmmyyyy(startIso) + " " + name + " 1/" + days,    // "Voorjaarsvakantie 1/9"
-           b: ddmmyyyy(endIso) + " " + days + "/" + days };        // einddag rustig: "9/9"
+           b: ddmmyyyy(endIso) + " " + name + " " + days + "/" + days };   // "Voorjaarsvakantie 9/9"
 }
 function processDates(){
   const today = todayStr();
@@ -1628,7 +1651,7 @@ function processDates(){
   for(const it of items){
     if(it.done || !it.text) continue;
     const r = it.weekly ? null : rangeInfo(it.text);
-    if(r){                                          // periode: dag 1 → "naam 1/x", einddatum → "x/x"
+    if(r){                                          // periode: dag 1 → "naam 1/x", einddatum → "naam x/x"
       if(r.endIso < today){ it.done = true; it.doneAt = nowISO(); it.rev = nowISO();
         markDirty(k); acted++; clog("Periode afgelopen — afgestreept: " + it.text); }
       else if(r.startIso === today || r.endIso === today){
@@ -1638,7 +1661,7 @@ function processDates(){
         const cid = "date-" + it.id;                // vast id: geen dubbele kopie
         if(dst.some(x => x.id === cid)) continue;   // al gekopieerd
         if((tomb["day:" + today] || {})[cid]) continue;
-        const txt2 = r.startIso === today ? r.name + " 1/" + r.days : r.days + "/" + r.days;
+        const txt2 = r.startIso === today ? r.name + " 1/" + r.days : r.name + " " + r.days + "/" + r.days;
         dst.push({ id: cid, text: txt2, done: false, doneAt: null,
                    created: nowISO(), rev: nowISO(), scope: it.scope || "b" });
         markDirty("day:" + today); acted++;
@@ -1811,7 +1834,7 @@ function visibleItems(ref, expand){
     items = items.filter(it => (it.scope || "b") !== (scopeFilter === "p" ? "w" : "p"));
   if(ref.key === listKey("dates")){
     if(expand){
-      const ex = [];                                // periode-item → twee regels: dag 1 + "Einde …"
+      const ex = [];                                // periode-item → twee regels: "naam 1/x" + "naam x/x"
       for(const it of items){
         const r = it.weekly ? null : rangeInfo(it.text);
         if(r){ ex.push(Object.assign({}, it, { text: r.a, __src: it }),
@@ -1928,6 +1951,7 @@ function itemdSave(){
         const wl = (it.text.length > 24 ? it.text.slice(0,24) + "…" : it.text);
         clog((ctx.weekly ? "Elke week aan: '" : "Elke week uit: '") + wl + "'");
       }
+      focusItemId = it.id;                    // bewerkt item: opnieuw in beeld scrollen
       render(); markDirty(refKey(ctx.ref));
     }
   } else addItem(ctx.ref, v, ctx.scope, ctx.weekly);
@@ -1951,6 +1975,7 @@ function addItem(ref, value, scope, weekly){
                scope: scope || "b", weekly: !!weekly };
   items.push(it);
   pushUndo(() => { refArr(ref).splice(refArr(ref).findIndex(x => x.id === it.id), 1); saveLocal(); }, [refKey(ref)]);
+  focusItemId = it.id;                       // nieuw item: scroll het in beeld
   render(); markDirty(refKey(ref));
   const vlabel = (v.length > 24 ? v.slice(0,24) + "…" : v);
   offerUndo("Toegevoegd: " + vlabel);
@@ -2236,7 +2261,7 @@ document.getElementById("menuDev").onclick = () => {
 document.getElementById("menuTheme").onclick = () => cycleTheme();
 document.getElementById("scopeBtn").onclick = () => setScope(scopeFilter === "b" ? "p" : scopeFilter === "p" ? "w" : "b");
 document.getElementById("foldBtn").onclick = () =>
-  applyFold(viewFold === "std" ? "max" : viewFold === "max" ? "none" : "std");   // uitgeklapt → maximaal → ingeklapt
+  applyFold(viewFold === "std" ? "all" : viewFold === "all" ? "none" : "std");
 dropTitles();
 updateFoldBtn();
 document.getElementById("devOk").onclick = () => {
