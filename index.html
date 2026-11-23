@@ -81,6 +81,10 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);
 .lane{display:flex;flex-direction:column;gap:12px;flex:1;min-width:0;align-items:stretch}
 /* dates-baan op desktop iets breder: die items zijn meestal wat langer */
 .lane.wide{flex:1.35}
+/* maximaal: dates-baan dubbel zo breed, lijst zo hoog als nodig — scrollt bij lange lijsten */
+.lane.maxlane{flex:2.7}
+.col.colmax{align-self:stretch}
+.col.colmax .listbox{max-height:none}
 @media (max-width:640px){
   #board{gap:8px;padding:8px 6px 90px}
   .lane{gap:8px}
@@ -417,7 +421,7 @@ if(window.matchMedia) try{
 /* ============ VERSIONERING ============ */
 /* Bij elke release: dit verhogen (semantic: breaking.feature.fix)
    én de cache-naam in sw.js mee-verhogen. */
-const VERSION = "0.23.0";
+const VERSION = "0.24.0";
 
 /* Google-login opent soms een extra tabblad dat niet vanzelf sluit (zeker op
    iPhone/PWA). Zijn wij zo'n hulptabblad (window.opener bestaat), dan sluiten
@@ -1203,25 +1207,52 @@ function toggleList(key){
   render();
 }
 /* ---------- inklap-toggle naast het wolkje: standaard open → alles open → alles dicht ---------- */
-let viewFold = "std";
-try{ viewFold = localStorage.getItem("vandaag_fold") || "std"; }catch(e){}
+let viewFold = "std";   // std = uitgeklapt, max = maximaal, none = ingeklapt
+try{ viewFold = localStorage.getItem("vandaag_fold") || "std"; if(viewFold === "all") viewFold = "max"; }catch(e){}
 function applyFold(mode){
-  viewFold = (mode === "all" || mode === "none") ? mode : "std";
+  if(mode === "all") mode = "max";              // oude waarde (vóór v0.24.0): maximaal
+  viewFold = (mode === "max" || mode === "none") ? mode : "std";
   openLists.clear();
-  if(viewFold === "std")                       // standaard: alleen de dagdelen, rest ingeklapt
+  if(viewFold === "std")                       // uitgeklapt: alleen de dagdelen, rest ingeklapt
     for(const d of DAY_KEYS) openLists.add(d);
-  if(viewFold === "all")                       // alles open: dagdelen + boodschappen + dates + eigen
-    for(const t of state.topics) openLists.add(listKey(t.id));
+  if(viewFold === "max" || viewFold === "none") // ingeklapt/maximaal: alles open (max + breed), of alles dicht
+    if(viewFold === "max") for(const t of state.topics) openLists.add(listKey(t.id));
   try{ localStorage.setItem("vandaag_fold", viewFold); }catch(e){}
-  updateFoldBtn(); saveLocal(); render();
+  dropTitles();
+updateFoldBtn(); saveLocal(); render();
 }
 /* inklap-toggle: één icoontje met drie balkjes — 3 x outline = alles dicht,
-   middelste vol = dagdelen open, 3 x vol = alles open */
+   middelste vol = uitgeklapt (dagdelen), 3 x vol = maximaal (dates dubbel zo breed,
+   zo hoog als de lijst) */
 const FOLD_ICONS = {
   std: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="4.5" height="14" rx="1.2"/><rect x="10" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="15" y="5" width="4.5" height="14" rx="1.2"/></svg>',
-  all: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="10" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="15" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/></svg>',
+  max: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="10" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/><rect x="15" y="5" width="4.5" height="14" rx="1.2" fill="currentColor"/></svg>',
   none: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="4.5" height="14" rx="1.2"/><rect x="10" y="5" width="4.5" height="14" rx="1.2"/><rect x="15" y="5" width="4.5" height="14" rx="1.2"/></svg>'
 };
+/* geen hover-tooltips: de tekstjes blijven soms "plakken" en zijn niet nodig —
+   elke title die de render zet wordt direct weer weggehaald */
+function dropTitles(){
+  try{
+    document.querySelectorAll("[title]").forEach(el => el.removeAttribute("title"));
+  }catch(e){}
+}
+if(typeof MutationObserver !== "undefined"){
+  new MutationObserver(() => {
+    document.querySelectorAll("[title]").forEach(el => el.removeAttribute("title"));
+  }).observe(document.documentElement, { subtree:true, childList:true, attributes:true, attributeFilter:["title"] });
+}
+function updateFoldBtn(){
+  const b = document.getElementById("foldBtn");
+  if(!b) return;
+  const names = { std:"uitgeklapt", max:"maximaal", none:"ingeklapt" };
+  b.title = "Lijsten: " + names[viewFold] + " — tik voor: uitgeklapt → maximaal → ingeklapt";
+  b.innerHTML = FOLD_ICONS[viewFold] || FOLD_ICONS.std;
+}
+if(typeof MutationObserver !== "undefined"){
+  new MutationObserver(() => {
+    document.querySelectorAll("[title]").forEach(el => el.removeAttribute("title"));
+  }).observe(document.documentElement, { subtree:true, childList:true, attributes:true, attributeFilter:["title"] });
+}
 function updateFoldBtn(){
   const b = document.getElementById("foldBtn");
   if(!b) return;
@@ -1321,19 +1352,27 @@ function renderBoard(){
     // werkmodus (desktop): dates helemaal rechts als 5e kolom — boodschappen valt weg
     if(st.id === "dates" && scopeFilter === "w" && (window.innerWidth || 1024) > 640){
       const dcol = makeColumn({ date: null, key: k }, state.lists[k]);
-      lanes[NL - 1].appendChild(dcol); lanes[NL - 1].classList.add("wide");
+      lanes[NL - 1].appendChild(dcol);
+      lanes[NL - 1].classList.add(viewFold === "max" ? "maxlane" : "wide");
+      if(viewFold === "max") dcol.classList.add("colmax");
       continue;
     }
     const lane = lanes[li % NL];
-    put(makeColumn({ date: null, key: k }, state.lists[k]));
-    if(st.id === "dates") lane.classList.add("wide");   // desktop: 5e kolom wat breder
+    const dcol2 = makeColumn({ date: null, key: k }, state.lists[k]);
+    lane.appendChild(dcol2);
+    if(st.id === "dates"){                              // desktop: 5e kolom breder; maximaal: dubbel
+      lane.classList.add(viewFold === "max" ? "maxlane" : "wide");
+      if(viewFold === "max") dcol2.classList.add("colmax");
+    }
   }
   // mobiel: dates als vaste lade bovenaan — kop altijd in beeld, tik = groter/kleiner
   const drw = document.getElementById("datesDrawer");
   drw.innerHTML = "";
   if((window.innerWidth || 1024) <= 640){
     const k = listKey("dates");
-    drw.appendChild(makeColumn({ date: null, key: k }, state.lists[k]));
+    const mcol = makeColumn({ date: null, key: k }, state.lists[k]);
+    if(viewFold === "max") mcol.classList.add("colmax");   // maximaal (mobiel): zo hoog als de lijst
+    drw.appendChild(mcol);
   }
   // eigen lijsten: in de kortste baan — lege plek onder een korte vaste lijst vult zich vanzelf
   for(const t of state.topics){
@@ -1558,7 +1597,7 @@ function stripDateFromText(text){
   return ((m ? text.slice(m[0].length) : text) || "").trim() || (text || "").trim();
 }
 /* periode-items ("19-12-2026 t/m 03-01-2027 kerstvakantie"): in de dates-lijst als
-   twee regels tonen — dag 1 met "/x" (aantal dagen) en op de einddatum "Einde …";
+   twee regels tonen — dag 1 "naam 1/x" en de einddag alleen "x/x" (geen "Einde" meer);
    jaartal mag ontbreken (eind < begin = over jaarsgrens) */
 function rangeInfo(text){
   if(!text) return null;
@@ -1577,8 +1616,8 @@ function rangeInfo(text){
   const startIso = isoOf(sy, +m[2], +m[1]), endIso = isoOf(ey, +m[5], +m[4]);
   const name = m[7].trim();
   return { startIso: startIso, endIso: endIso, days: days, name: name,
-           a: ddmmyyyy(startIso) + " " + name + " /" + days,   // kort: "Kerstvakantie /16"
-           b: ddmmyyyy(endIso) + " Einde " + name };
+           a: ddmmyyyy(startIso) + " " + name + " 1/" + days,    // "Voorjaarsvakantie 1/9"
+           b: ddmmyyyy(endIso) + " " + days + "/" + days };        // einddag rustig: "9/9"
 }
 function processDates(){
   const today = todayStr();
@@ -1589,7 +1628,7 @@ function processDates(){
   for(const it of items){
     if(it.done || !it.text) continue;
     const r = it.weekly ? null : rangeInfo(it.text);
-    if(r){                                          // periode: dag 1 → "naam /x", einddatum → "Einde …"
+    if(r){                                          // periode: dag 1 → "naam 1/x", einddatum → "x/x"
       if(r.endIso < today){ it.done = true; it.doneAt = nowISO(); it.rev = nowISO();
         markDirty(k); acted++; clog("Periode afgelopen — afgestreept: " + it.text); }
       else if(r.startIso === today || r.endIso === today){
@@ -1599,7 +1638,7 @@ function processDates(){
         const cid = "date-" + it.id;                // vast id: geen dubbele kopie
         if(dst.some(x => x.id === cid)) continue;   // al gekopieerd
         if((tomb["day:" + today] || {})[cid]) continue;
-        const txt2 = r.startIso === today ? r.name + " /" + r.days : "Einde " + r.name;
+        const txt2 = r.startIso === today ? r.name + " 1/" + r.days : r.days + "/" + r.days;
         dst.push({ id: cid, text: txt2, done: false, doneAt: null,
                    created: nowISO(), rev: nowISO(), scope: it.scope || "b" });
         markDirty("day:" + today); acted++;
@@ -2197,7 +2236,8 @@ document.getElementById("menuDev").onclick = () => {
 document.getElementById("menuTheme").onclick = () => cycleTheme();
 document.getElementById("scopeBtn").onclick = () => setScope(scopeFilter === "b" ? "p" : scopeFilter === "p" ? "w" : "b");
 document.getElementById("foldBtn").onclick = () =>
-  applyFold(viewFold === "std" ? "all" : viewFold === "all" ? "none" : "std");
+  applyFold(viewFold === "std" ? "max" : viewFold === "max" ? "none" : "std");   // uitgeklapt → maximaal → ingeklapt
+dropTitles();
 updateFoldBtn();
 document.getElementById("devOk").onclick = () => {
   const v = document.getElementById("devName").value.trim();
